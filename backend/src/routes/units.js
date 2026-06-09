@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const ctrl = require('../controllers/unitController');
+const { auth, adminOnly } = require('../middleware/auth');
+
+router.get('/', auth, ctrl.getAll);
+router.get('/:id', auth, ctrl.getOne);
+router.post('/', auth, adminOnly, ctrl.create);
+router.put('/:id', auth, adminOnly, ctrl.update);
+router.delete('/:id', auth, adminOnly, ctrl.delete);
+
+module.exports = router;

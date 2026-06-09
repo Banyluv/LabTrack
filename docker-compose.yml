@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: labtrack_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: labtrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - labtrack_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: labtrack_backend
+    depends_on:
+      - postgres
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/labtrack
+      JWT_SECRET: change_this_in_production_please
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: production
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: labtrack_frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  labtrack_pgdata:
