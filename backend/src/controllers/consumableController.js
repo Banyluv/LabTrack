@@ -1,29 +1,76 @@
 const pool = require('../config/db');
 
 exports.getAll = async (req, res) => {
-  const { category, search, status } = req.query;
+  const { category, search, status, history_date, all } = req.query;
   const { role, facility_name } = req.user;
   const isStaff = role === 'staff' && facility_name;
 
-  if (isStaff) {
-    // Staff: show facility-level stock computed from dispatch_logs
+  // Build WHERE clauses for optional category + search filters (reusable in both branches)
+  const buildFilters = (paramsArr, afterDateIdx) => {
+    let clauses = '';
+    if (category) { paramsArr.push(category); clauses += ` AND cat.name = ${afterDateIdx + 1}`; afterDateIdx++; }
+    if (search) { paramsArr.push(`%${search}%`); clauses += ` AND c.name ILIKE ${afterDateIdx + 1}`; afterDateIdx++; }
+    return clauses;
+  };
+
+  // If ?all=true, show all consumables regardless of role (for request dropdown)
+  if (all === 'true') {
+    const params = [];
     let query = `
       SELECT c.id, c.name, c.category_id, cat.name as category_name, c.unit, c.description,
-             COALESCE(fs.facility_stock, 0) as stock,
-             c.reorder_quantity, c.price
+             c.stock, c.reorder_quantity, c.price
       FROM consumables c
       LEFT JOIN categories cat ON c.category_id = cat.id
-      LEFT JOIN (
-        SELECT consumable_id, SUM(quantity) as facility_stock
-        FROM dispatch_logs
-        WHERE destination = $1
-        GROUP BY consumable_id
-      ) fs ON fs.consumable_id = c.id
-      WHERE COALESCE(fs.facility_stock, 0) > 0
+      WHERE 1=1
     `;
-    const params = [facility_name];
-    if (category) { params.push(category); query += ` AND cat.name = $${params.length}`; }
-    if (search) { params.push(`%${search}%`); query += ` AND c.name ILIKE $${params.length}`; }
+    query += buildFilters(params, 0);
+    query += ' ORDER BY cat.name, c.name';
+    try {
+      const { rows } = await pool.query(query, params);
+      return res.json(rows);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (isStaff) {
+    // Staff: show stock from their own received logs
+    const userName = req.user.name;
+    const params = [userName];
+    let query = '';
+    if (history_date) {
+      params.push(history_date);
+      query = `
+        SELECT c.id, c.name, c.category_id, cat.name as category_name, c.unit, c.description,
+               COALESCE(rs.user_stock, 0) as stock,
+               c.reorder_quantity, c.price
+        FROM consumables c
+        LEFT JOIN categories cat ON c.category_id = cat.id
+        LEFT JOIN (
+          SELECT consumable_id, SUM(quantity) as user_stock
+          FROM receive_logs
+          WHERE received_by = $1 AND received_at <= $2::timestamp
+          GROUP BY consumable_id
+        ) rs ON rs.consumable_id = c.id
+        WHERE COALESCE(rs.user_stock, 0) > 0
+      `;
+    } else {
+      query = `
+        SELECT c.id, c.name, c.category_id, cat.name as category_name, c.unit, c.description,
+               COALESCE(rs.user_stock, 0) as stock,
+               c.reorder_quantity, c.price
+        FROM consumables c
+        LEFT JOIN categories cat ON c.category_id = cat.id
+        LEFT JOIN (
+          SELECT consumable_id, SUM(quantity) as user_stock
+          FROM receive_logs
+          WHERE received_by = $1
+          GROUP BY consumable_id
+        ) rs ON rs.consumable_id = c.id
+        WHERE COALESCE(rs.user_stock, 0) > 0
+      `;
+    }
+    query += buildFilters(params, params.length);
     query += ' ORDER BY cat.name, c.name';
     try {
       const { rows } = await pool.query(query, params);
@@ -35,18 +82,45 @@ exports.getAll = async (req, res) => {
   }
 
   // Admin: show central warehouse stock
-  let query = `
-    SELECT c.*, cat.name as category_name
-    FROM consumables c
-    LEFT JOIN categories cat ON c.category_id = cat.id
-  `;
   const params = [];
+  let selectStock;
+  if (history_date) {
+    // Compute stock as-of history_date:
+    // stock_on_date = current_stock + dispatches_after_date - receives_after_date
+    params.push(history_date);
+    selectStock = `
+      SELECT c.*, cat.name as category_name,
+             GREATEST(0, c.stock
+               + COALESCE(d.disp_after, 0)
+               - COALESCE(r.recv_after, 0)) as stock
+      FROM consumables c
+      LEFT JOIN categories cat ON c.category_id = cat.id
+      LEFT JOIN (
+        SELECT consumable_id, SUM(quantity) as disp_after
+        FROM dispatch_logs
+        WHERE dispatched_at > $1::timestamp
+        GROUP BY consumable_id
+      ) d ON d.consumable_id = c.id
+      LEFT JOIN (
+        SELECT consumable_id, SUM(quantity) as recv_after
+        FROM receive_logs
+        WHERE received_at > $1::timestamp
+        GROUP BY consumable_id
+      ) r ON r.consumable_id = c.id
+    `;
+  } else {
+    selectStock = `
+      SELECT c.*, cat.name as category_name
+      FROM consumables c
+      LEFT JOIN categories cat ON c.category_id = cat.id
+    `;
+  }
+  let query = selectStock;
   query += ` WHERE 1=1`;
-  if (category) { params.push(category); query += ` AND cat.name = $${params.length}`; }
-  if (search) { params.push(`%${search}%`); query += ` AND c.name ILIKE $${params.length}`; }
-  if (status === 'low') query += ` AND c.stock > 0 AND c.stock <= c.reorder_quantity`;
-  if (status === 'out') query += ` AND c.stock = 0`;
-  if (status === 'ok') query += ` AND c.stock > c.reorder_quantity`;
+  query += buildFilters(params, history_date ? 1 : 0);
+  if (status === 'low') query += ` AND GREATEST(0, c.stock${history_date ? ' + COALESCE(d.disp_after, 0) - COALESCE(r.recv_after, 0)' : ''}) > 0 AND GREATEST(0, c.stock${history_date ? ' + COALESCE(d.disp_after, 0) - COALESCE(r.recv_after, 0)' : ''}) < 10`;
+  if (status === 'out') query += ` AND GREATEST(0, c.stock${history_date ? ' + COALESCE(d.disp_after, 0) - COALESCE(r.recv_after, 0)' : ''}) = 0`;
+  if (status === 'ok') query += ` AND GREATEST(0, c.stock${history_date ? ' + COALESCE(d.disp_after, 0) - COALESCE(r.recv_after, 0)' : ''}) >= 10`;
   query += ' ORDER BY cat.name, c.name';
   try {
     const { rows } = await pool.query(query, params);
@@ -97,15 +171,15 @@ exports.getOne = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-  const { name, category_id, unit, stock, reorder_quantity, price, description } = req.body;
+  const { name, category_id, unit, stock, reorder_quantity, price, description, batch_no, expiry_date } = req.body;
   if (!name || !category_id || !unit) return res.status(400).json({ error: 'name, category_id, unit required' });
   const st = typeof stock === 'number' ? stock : parseInt(stock) || 0;
   const rq = typeof reorder_quantity === 'number' ? reorder_quantity : parseInt(reorder_quantity) || 0;
   if (st > 0 && rq > 0 && rq >= st) return res.status(400).json({ error: 'Reorder quantity must be less than current stock' });
   try {
     const { rows } = await pool.query(
-      'INSERT INTO consumables (name,category_id,unit,stock,reorder_quantity,price,description) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-      [name, category_id, unit, st, rq, price || 0, description || '']
+      'INSERT INTO consumables (name,category_id,unit,stock,reorder_quantity,price,description,batch_no,expiry_date) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
+      [name, category_id, unit, st, rq, price || 0, description || '', batch_no || '', expiry_date || null]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -114,7 +188,7 @@ exports.create = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
-  const { name, category_id, unit, reorder_quantity, price, description } = req.body;
+  const { name, category_id, unit, reorder_quantity, price, description, batch_no, expiry_date } = req.body;
   try {
     // Fetch current stock to validate reorder_quantity
     const cur = await pool.query('SELECT stock FROM consumables WHERE id=$1', [req.params.id]);
@@ -127,9 +201,9 @@ exports.update = async (req, res) => {
     const { rows } = await pool.query(
       `UPDATE consumables SET name=COALESCE($1,name), category_id=COALESCE($2,category_id),
        unit=COALESCE($3,unit), reorder_quantity=COALESCE($4,reorder_quantity), price=COALESCE($5,price),
-       description=COALESCE($6,description), updated_at=NOW()
+       description=COALESCE($6,description), batch_no=COALESCE($8,batch_no), expiry_date=COALESCE($9,expiry_date), updated_at=NOW()
        WHERE id=$7 RETURNING *`,
-      [name, category_id, unit, rq, price, description, req.params.id]
+      [name, category_id, unit, rq, price, description, req.params.id, batch_no, expiry_date]
     );
     res.json(rows[0]);
   } catch (err) {
@@ -170,9 +244,43 @@ exports.addCategory = async (req, res) => {
 };
 
 exports.getDashboardStats = async (req, res) => {
+  const { role, name, facility_name } = req.user;
+  const isStaff = role === 'staff' && facility_name;
   try {
+    if (isStaff) {
+      const userName = name;
+      // Staff: stats from own received stock, mirroring inventory query
+      const stats = await pool.query(`
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE COALESCE(rs.user_stock, 0) >= 10) as ok,
+          COUNT(*) FILTER (WHERE COALESCE(rs.user_stock, 0) > 0 AND COALESCE(rs.user_stock, 0) < 10) as low,
+          COUNT(*) FILTER (WHERE COALESCE(rs.user_stock, 0) = 0) as out
+        FROM consumables c
+        LEFT JOIN (
+          SELECT consumable_id, SUM(quantity) as user_stock
+          FROM receive_logs
+          WHERE received_by = $1
+          GROUP BY consumable_id
+        ) rs ON rs.consumable_id = c.id
+        WHERE COALESCE(rs.user_stock, 0) > 0
+      `, [userName]);
+      const row = stats.rows[0];
+      return res.json({
+        total: parseInt(row.total),
+        low: parseInt(row.low),
+        out: parseInt(row.out),
+        ok: parseInt(row.ok),
+        dispatched_today: 0,
+        total_dispatched: 0,
+        total_received: 0,
+        recent_dispatches: [],
+      });
+    }
+
+    // Admin: warehouse-level stats
     const total = await pool.query('SELECT COUNT(*) FROM consumables');
-    const low = await pool.query('SELECT COUNT(*) FROM consumables WHERE stock > 0 AND stock <= reorder_quantity');
+    const low = await pool.query('SELECT COUNT(*) FROM consumables WHERE stock > 0 AND stock < 10');
     const out = await pool.query('SELECT COUNT(*) FROM consumables WHERE stock = 0');
     const today = await pool.query(`SELECT COALESCE(SUM(quantity),0) as total FROM dispatch_logs WHERE dispatched_at::date = CURRENT_DATE`);
     const allDisp = await pool.query('SELECT COALESCE(SUM(quantity),0) as total FROM dispatch_logs');

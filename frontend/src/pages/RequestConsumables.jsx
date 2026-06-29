@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -19,31 +19,16 @@ export default function RequestConsumables() {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const wrapperRef = useRef(null);
 
   useEffect(() => {
     fetchConsumables();
     fetchMyRequests();
   }, []);
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-        setSearch('');
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const fetchConsumables = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/consumables');
+      const { data } = await api.get('/consumables?all=true');
       setConsumables(data);
     } catch (err) {
       toast.error('Failed to fetch consumables');
@@ -64,8 +49,6 @@ export default function RequestConsumables() {
   const handleSelect = (c) => {
     setSelectedConsumable(c.id);
     setSelectedItem(c);
-    setDropdownOpen(false);
-    setSearch('');
   };
 
   const handleSubmit = async (e) => {
@@ -104,12 +87,6 @@ export default function RequestConsumables() {
     }
   };
 
-  const filtered = consumables.filter(c =>
-    !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.category_name && c.category_name.toLowerCase().includes(search.toLowerCase()))
-  );
-
-  const showSuggestion = search && !filtered.some(c => c.id === selectedConsumable);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -122,82 +99,26 @@ export default function RequestConsumables() {
           <div className="card p-6 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">New Request</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Searchable Dropdown */}
-              <div ref={wrapperRef}>
+              {/* Consumable Dropdown */}
+              <div>
                 <label className="label dark:text-gray-300">Select Consumable</label>
-                <div className="relative">
-                  {/* Selected pill / trigger */}
-                  <button
-                    type="button"
-                    className="input flex items-center justify-between pr-3 text-left cursor-pointer dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                    onClick={() => { setDropdownOpen(!dropdownOpen); setSearch(''); }}
-                  >
-                    {selectedItem ? (
-                      <span className="flex items-center gap-2 truncate">
-                        <span className="font-medium truncate">{selectedItem.name}</span>
-                        <span className="text-xs text-gray-400 dark:text-gray-500">({selectedItem.unit})</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">Stock: {selectedItem.stock}</span>
-                        {statusBadge(selectedItem.stock, selectedItem.reorder_quantity)}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 dark:text-gray-500">Choose a consumable...</span>
-                    )}
-                    <svg className={`w-4 h-4 text-gray-400 transition-transform ml-2 flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {/* Dropdown list */}
-                  {dropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-72 overflow-hidden">
-                      {/* Search input */}
-                      <div className="p-2 border-b border-gray-100 dark:border-gray-700">
-                        <input
-                          type="text"
-                          className="input text-sm py-1.5 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                          placeholder="Search consumable..."
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                      <div className="overflow-y-auto max-h-56">
-                        {filtered.length === 0 ? (
-                          <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">No consumables found</p>
-                        ) : (
-                          filtered.map(c => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              className={`w-full text-left px-3 py-2.5 flex items-center justify-between hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors ${
-                                selectedConsumable === c.id ? 'bg-teal-50 dark:bg-teal-900/30 border-l-2 border-teal-500' : ''
-                              }`}
-                              onClick={() => handleSelect(c)}
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{c.name}</span>
-                                  <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">({c.unit})</span>
-                                </div>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  {c.category_name && (
-                                    <span className="text-xs text-gray-400 dark:text-gray-500">{c.category_name}</span>
-                                  )}
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    Stock: <span className={c.stock === 0 ? 'text-red-500 font-medium' : c.stock <= (c.reorder_quantity || 0) ? 'text-amber-500 font-medium' : ''}>{c.stock}</span>
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex-shrink-0 ml-2">
-                                {statusBadge(c.stock, c.reorder_quantity)}
-                              </div>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <select
+                  className="input dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                  value={selectedConsumable}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const item = consumables.find(c => c.id.toString() === id);
+                    if (item) handleSelect(item);
+                    else { setSelectedConsumable(""); setSelectedItem(null); }
+                  }}
+                >
+                  <option value="">-- Choose a consumable --</option>
+                  {consumables.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.unit}) - Stock: {c.stock} | {c.category_name || "N/A"}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Selected item detail card */}
@@ -301,6 +222,11 @@ export default function RequestConsumables() {
                     {req.notes && (
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         <strong>Notes:</strong> {req.notes}
+                      </p>
+                    )}
+                    {req.admin_comment && (
+                      <p className="text-sm text-blue-600 dark:text-blue-400 italic mt-1">
+                        <strong>Reason:</strong> {req.admin_comment}
                       </p>
                     )}
                     {req.approved_by && (

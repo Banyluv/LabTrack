@@ -50,6 +50,32 @@ exports.update = async (req, res) => {
   }
 };
 
+exports.toggleStatus = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "UPDATE facilities SET status = CASE WHEN status = 'active' THEN 'inactive' ELSE 'active' END WHERE id = $1 RETURNING *",
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.toggleStatus = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "UPDATE facilities SET status = CASE WHEN status = 'active' THEN 'inactive' ELSE 'active' END WHERE id = $1 RETURNING *",
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.delete = async (req, res) => {
   try {
     await pool.query('DELETE FROM facilities WHERE id = $1', [req.params.id]);

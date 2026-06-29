@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '..', '.env') });
 const { Pool } = require('pg');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -81,6 +81,12 @@ const migrate = async () => {
 
     // ── 5a. Add facility_name to receive_logs if column missing ──
     await client.query(`ALTER TABLE receive_logs ADD COLUMN IF NOT EXISTS facility_name VARCHAR(255) DEFAULT ''`);
+    // ── 5b. Add batch_no and expiry_date to receive_logs ──
+    await client.query(`ALTER TABLE receive_logs ADD COLUMN IF NOT EXISTS batch_no VARCHAR(100) DEFAULT ''`);
+    await client.query(`ALTER TABLE receive_logs ADD COLUMN IF NOT EXISTS expiry_date DATE DEFAULT NULL`);
+    // ── 5c. Add batch_no and expiry_date to consumables ──
+    await client.query(`ALTER TABLE consumables ADD COLUMN IF NOT EXISTS batch_no VARCHAR(100) DEFAULT ''`);
+    await client.query(`ALTER TABLE consumables ADD COLUMN IF NOT EXISTS expiry_date DATE DEFAULT NULL`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS consumable_requests (
@@ -114,6 +120,21 @@ const migrate = async () => {
     await client.query(`ALTER TABLE facilities ADD COLUMN IF NOT EXISTS state VARCHAR(100) DEFAULT ''`);
     await client.query(`ALTER TABLE facilities ADD COLUMN IF NOT EXISTS lga VARCHAR(100) DEFAULT ''`);
     await client.query(`ALTER TABLE consumable_requests ADD COLUMN IF NOT EXISTS approved_quantity INTEGER DEFAULT 0`);
+    await client.query(`ALTER TABLE consumable_requests ADD COLUMN IF NOT EXISTS admin_comment TEXT DEFAULT ''`);
+    await client.query(`ALTER TABLE facilities ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS suppliers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        contact_person VARCHAR(255),
+        email VARCHAR(255),
+        phone VARCHAR(100),
+        address TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS quarterly_reports (

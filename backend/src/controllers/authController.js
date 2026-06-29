@@ -56,6 +56,72 @@ exports.me = async (req, res) => {
   }
 };
 
+exports.updateProfile = async (req, res) => {
+  const { name, email, facility_name, state, lga } = req.body;
+  try {
+    const { rows } = await pool.query(
+      'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), facility_name = COALESCE($3, facility_name), state = COALESCE($4, state), lga = COALESCE($5, lga) WHERE id = $6 RETURNING id, name, email, role, facility_name, state, lga',
+      [name || null, email || null, facility_name || null, state || null, lga || null, req.user.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'Profile updated', user: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current and new password required' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+  try {
+    const { rows } = await pool.query('SELECT password FROM users WHERE id = $1', [req.user.id]);
+    if (!rows.length) return res.status(404).json({ error: 'User not found' });
+    const valid = await bcrypt.compare(currentPassword, rows[0].password);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+    const hash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hash, req.user.id]);
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.listUsers = async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT id, name, email, role, facility_name, state, lga, status, created_at FROM users ORDER BY name");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.toggleUserStatus = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "UPDATE users SET status = CASE WHEN status = 'active' THEN 'inactive' ELSE 'active' END WHERE id = $1 RETURNING id, name, email, role, status",
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'User not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.toggleUserStatus = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "UPDATE users SET status = CASE WHEN status = 'active' THEN 'inactive' ELSE 'active' END WHERE id = $1 RETURNING id, name, email, role, status",
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'User not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });

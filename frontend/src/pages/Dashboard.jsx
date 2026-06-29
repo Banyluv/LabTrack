@@ -22,7 +22,7 @@ export default function Dashboard() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-full">
-      <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
@@ -38,18 +38,9 @@ export default function Dashboard() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Laboratory consumables overview</p>
+        <h1 className="text-xl font-semibold text-green-800 dark:text-green-300">Dashboard</h1>
+        <p className="text-sm text-green-700 dark:text-green-200 mt-0.5">ECEWS Consumables overview</p>
       </div>
-
-      {(stats?.low > 0 || stats?.out > 0) && (
-        <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-          </svg>
-          <span><strong>{stats.out}</strong> item(s) out of stock and <strong>{stats.low}</strong> item(s) running low.</span>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Total Consumables" value={stats?.total || 0} sub="registered items" to="/inventory" />
@@ -60,17 +51,17 @@ export default function Dashboard() {
 
       {isAdmin && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard label="Dispatched Today" value={stats?.dispatched_today || 0} sub="units sent" color="teal" />
+          <StatCard label="Dispatched Today" value={stats?.dispatched_today || 0} sub="units sent" color="green" />
           <StatCard label="Total Dispatched" value={stats?.total_dispatched || 0} sub="all time" />
           <StatCard label="Total Received" value={stats?.total_received || 0} sub="all time" />
-          <StatCard label="This Month" value={report?.summary?.total_dispatched || 0} sub="units dispatched" color="teal" />
+          <StatCard label="This Month" value={report?.summary?.total_dispatched || 0} sub="units dispatched" color="green" />
         </div>
       )}
 
       {isAdmin ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Stock distribution</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">Stock distribution</h3>
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -81,42 +72,42 @@ export default function Dashboard() {
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
-            ) : <p className="text-sm text-gray-400 text-center py-10">No stock data</p>}
+            ) : <p className="text-sm text-green-100 text-center py-10">No stock data</p>}
           </div>
 
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Monthly dispatch by category</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">Monthly dispatch by category</h3>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData} barSize={20}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-25} textAnchor="end" height={55} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="qty" fill="#1D9E75" radius={[4,4,0,0]} />
+                  <Bar dataKey="qty" fill="#10B981" radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
-            ) : <p className="text-sm text-gray-400 text-center py-10">No dispatch data this month</p>}
+            ) : <p className="text-sm text-green-100 text-center py-10">No dispatch data this month</p>}
           </div>
 
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Recent dispatches</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">Recent dispatches</h3>
             <div className="space-y-0">
               {stats?.recent_dispatches?.length ? stats.recent_dispatches.map(d => (
-                <div key={d.id} className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0">
+                <div key={d.id} className="flex items-center justify-between py-2.5 border-b border-green-500 last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{d.consumable_name}</p>
-                    <p className="text-xs text-gray-400">{d.destination} · {format(new Date(d.dispatched_at), 'MMM d, h:mm a')}</p>
+                    <p className="text-sm font-medium text-white">{d.consumable_name}</p>
+                    <p className="text-xs text-green-100">{d.destination} · {format(new Date(d.dispatched_at), 'MMM d, h:mm a')}</p>
                   </div>
-                  <span className="text-sm font-semibold text-red-500">-{d.quantity}</span>
+                  <span className="text-sm font-semibold text-red-200">-{d.quantity}</span>
                 </div>
-              )) : <p className="text-sm text-gray-400 text-center py-8">No dispatches yet</p>}
+              )) : <p className="text-sm text-green-100 text-center py-8">No dispatches yet</p>}
             </div>
-            <button onClick={() => navigate('/dashboard/dispatch')} className="mt-3 text-xs text-teal-600 font-medium hover:underline">View all dispatches →</button>
+              <button onClick={() => navigate('/dashboard/dispatch')} className="mt-3 text-xs text-white font-medium hover:underline underline-offset-2">View all dispatches →</button>
           </div>
         </div>
       ) : (
         <div className="card p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Stock distribution</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">Stock distribution</h3>
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
@@ -127,7 +118,7 @@ export default function Dashboard() {
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          ) : <p className="text-sm text-gray-400 text-center py-10">No stock data</p>}
+          ) : <p className="text-sm text-green-100 text-center py-10">No stock data</p>}
         </div>
       )}
     </div>

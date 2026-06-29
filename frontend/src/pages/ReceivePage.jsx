@@ -8,7 +8,7 @@ import Modal from '../components/Modal';
 export default function ReceivePage() {
   const qc = useQueryClient();
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ consumable_id: '', quantity: '', supplier: '', received_by: '', invoice_ref: '' });
+  const [form, setForm] = useState({ consumable_id: '', quantity: '', supplier: '', received_by: '', invoice_ref: '', batch_no: '', expiry_date: '' });
   const [filters, setFilters] = useState({ from: '', to: '' });
 
   const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables').then(r => r.data) });
@@ -50,10 +50,10 @@ export default function ReceivePage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead><tr>
-              {['Date & Time','Consumable','Category','Qty Received','Supplier','Received By','Invoice Ref'].map(h => <th key={h} className="table-th">{h}</th>)}
+              {['Date & Time','Consumable','Category','Qty Received','Supplier','Received By','Batch No.','Expiry Date','Invoice Ref'].map(h => <th key={h} className="table-th">{h}</th>)}
             </tr></thead>
             <tbody>
-              {isLoading ? <tr><td colSpan={7} className="table-td text-center py-10 text-gray-400">Loading...</td></tr>
+              {isLoading ? <tr><td colSpan={9} className="table-td text-center py-10 text-gray-400">Loading...</td></tr>
                : logs.length ? logs.map(log => (
                 <tr key={log.id} className="hover:bg-gray-50">
                   <td className="table-td text-xs text-gray-500 whitespace-nowrap">{format(new Date(log.received_at), 'MMM d yyyy, h:mm a')}</td>
@@ -62,9 +62,11 @@ export default function ReceivePage() {
                   <td className="table-td font-semibold text-green-600">+{log.quantity}</td>
                   <td className="table-td">{log.supplier || '—'}</td>
                   <td className="table-td text-gray-500">{log.received_by}</td>
+                  <td className="table-td font-mono text-xs">{log.batch_no || '—'}</td>
+                  <td className="table-td text-xs">{log.expiry_date ? format(new Date(log.expiry_date), 'MMM d yyyy') : '—'}</td>
                   <td className="table-td text-gray-400 text-xs">{log.invoice_ref || '—'}</td>
                 </tr>
-              )) : <tr><td colSpan={7} className="table-td text-center py-10 text-gray-400">No receive records</td></tr>}
+              )) : <tr><td colSpan={9} className="table-td text-center py-10 text-gray-400">No receive records</td></tr>}
             </tbody>
           </table>
         </div>
@@ -84,6 +86,10 @@ export default function ReceivePage() {
             <div><label className="label">Supplier</label><input className="input" placeholder="Supplier name" value={form.supplier} onChange={f('supplier')} /></div>
           </div>
           <div><label className="label">Received By *</label><input className="input" placeholder="Staff name" value={form.received_by} onChange={f('received_by')} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="label">Batch No.</label><input className="input" placeholder="BATCH-001" value={form.batch_no} onChange={f('batch_no')} /></div>
+            <div><label className="label">Expiry Date</label><input className="input" type="date" value={form.expiry_date} onChange={f('expiry_date')} /></div>
+          </div>
           <div><label className="label">Invoice / Reference No.</label><input className="input" placeholder="INV-0000" value={form.invoice_ref} onChange={f('invoice_ref')} /></div>
         </div>
       </Modal>

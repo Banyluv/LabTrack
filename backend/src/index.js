@@ -13,6 +13,7 @@ app.use('/api/requests', require('./routes/requests'));
 app.use('/api/reports/quarterly', require('./routes/quarterlyReports'));
 app.use('/api/units', require('./routes/units'));
 app.use('/api/facilities', require('./routes/facilities'));
+app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api', require('./routes/transactions'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));

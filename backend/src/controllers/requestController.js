@@ -27,7 +27,10 @@ exports.getUserRequests = async (req, res) => {
   
   try {
     const { rows } = await pool.query(
-      `SELECT cr.*, c.name as consumable_name, c.unit
+      `SELECT cr.*, 
+              c.name as consumable_name, 
+              c.unit,
+              c.stock as current_stock
        FROM consumable_requests cr
        JOIN consumables c ON cr.consumable_id = c.id
        WHERE cr.user_id = $1
@@ -43,7 +46,13 @@ exports.getUserRequests = async (req, res) => {
 exports.getAllRequests = async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT cr.*, c.name as consumable_name, c.unit, c.stock as consumable_stock, u.name as user_name, u.email as user_email, u.facility_name as user_facility
+      `SELECT cr.*, 
+              c.name as consumable_name, 
+              c.unit, 
+              c.stock as consumable_stock, 
+              u.name as user_name, 
+              u.email as user_email, 
+              u.facility_name as user_facility
        FROM consumable_requests cr
        JOIN consumables c ON cr.consumable_id = c.id
        JOIN users u ON cr.user_id = u.id
@@ -57,7 +66,7 @@ exports.getAllRequests = async (req, res) => {
 
 exports.approveRequest = async (req, res) => {
   const { request_id } = req.params;
-  const { notes, approved_quantity } = req.body;
+  const { notes, approved_quantity, admin_comment } = req.body; // Added admin_comment
   const approved_by = req.user.name;
   
   const client = await pool.connect();
@@ -82,7 +91,7 @@ exports.approveRequest = async (req, res) => {
       return res.status(400).json({ error: `Request is already ${request.status}` });
     }
     
-    // Determine quantity to approve (admin can specify, defaults to requested)
+    // Determine quantity to approve
     const qty = approved_quantity !== undefined ? parseInt(approved_quantity) : request.quantity;
     if (isNaN(qty) || qty <= 0) {
       await client.query('ROLLBACK');
@@ -116,7 +125,6 @@ exports.approveRequest = async (req, res) => {
     );
     
     // Create dispatch log
-    // Get user's facility for destination
     const { rows: users } = await client.query(
       'SELECT facility_name FROM users WHERE id = $1',
       [request.user_id]
@@ -129,13 +137,18 @@ exports.approveRequest = async (req, res) => {
       [request.consumable_id, qty, destination, approved_by, notes || '']
     );
     
-    // Update request with approved quantity and status
+    // Update request with approved quantity, admin comment, and status
     const { rows } = await client.query(
       `UPDATE consumable_requests 
-       SET status = 'approved', approved_by = $1, approved_quantity = $2, notes = $3, updated_at = NOW()
-       WHERE id = $4
+       SET status = 'approved', 
+           approved_by = $1, 
+           approved_quantity = $2, 
+           notes = $3,
+           admin_comment = $4,  -- Store admin's comment/reason
+           updated_at = NOW()
+       WHERE id = $5
        RETURNING *`,
-      [approved_by, qty, notes || '', request_id]
+      [approved_by, qty, notes || '', admin_comment || '', request_id]
     );
     
     await client.query('COMMIT');
@@ -150,16 +163,20 @@ exports.approveRequest = async (req, res) => {
 
 exports.rejectRequest = async (req, res) => {
   const { request_id } = req.params;
-  const { notes } = req.body;
+  const { notes, admin_comment } = req.body; // Added admin_comment
   const approved_by = req.user.name;
   
   try {
     const { rows } = await pool.query(
       `UPDATE consumable_requests 
-       SET status = 'rejected', approved_by = $1, notes = $2, updated_at = NOW()
-       WHERE id = $3
+       SET status = 'rejected', 
+           approved_by = $1, 
+           notes = $2,
+           admin_comment = $3,  -- Store admin's comment/reason
+           updated_at = NOW()
+       WHERE id = $4
        RETURNING *`,
-      [approved_by, notes || '', request_id]
+      [approved_by, notes || '', admin_comment || '', request_id]
     );
     
     if (!rows.length) {

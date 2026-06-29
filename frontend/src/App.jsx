@@ -15,14 +15,16 @@ import QuarterlyReports from './pages/QuarterlyReports';
 import RequestConsumables from './pages/RequestConsumables';
 import ApproveRequests from './pages/ApproveRequests';
 import Facilities from './pages/Facilities';
+import Suppliers from './pages/Suppliers';
+import Settings from './pages/Settings';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-100">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-blue-500">Loading LabTrack...</p>
+        <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-green-600">Loading ECEWS Consumable Tracker...</p>
       </div>
     </div>
   );
@@ -32,10 +34,10 @@ const PrivateRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-100">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-teal-500">Loading LabTrack...</p>
+        <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-green-600">Loading ECEWS Consumable Tracker...</p>
       </div>
     </div>
   );
@@ -67,6 +69,8 @@ export default function App() {
             <Route path="request" element={<RequestConsumables />} />
             <Route path="approve-requests" element={<AdminRoute><ApproveRequests /></AdminRoute>} />
             <Route path="facilities" element={<AdminRoute><Facilities /></AdminRoute>} />
+            <Route path="suppliers" element={<AdminRoute><Suppliers /></AdminRoute>} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
       </BrowserRouter>
