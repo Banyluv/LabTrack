@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('admin@labtrack.com');
+  const [email, setEmail] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -33,15 +33,15 @@ export default function AdminLogin() {
               <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">LabTrack</h1>
-          <p className="text-sm text-gray-500 mt-1">Admin Portal</p>
+          <h1 className="text-2xl font-bold text-gray-900">ECEWS</h1>
+          <p className="text-sm text-gray-500 mt-1">Consumables & Logistics Management System Admin Portal</p>
         </div>
 
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="label">Email address</label>
-              <input type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required />
+              <label className="label">Username</label>
+              <input type="text" className="input" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             <div>
               <label className="label">Password</label>
@@ -60,7 +60,7 @@ export default function AdminLogin() {
             </button>
           </form>
           <p className="text-center text-xs text-gray-400 mt-4">
-            Admin credentials: admin@labtrack.com / admin123
+            Admin credentials: admin / admin123
           </p>
           <p className="text-center text-xs text-gray-400 mt-2">
             Are you a staff member? <Link to="/login" className="text-teal-600 hover:text-teal-700">Go to Staff Login</Link>

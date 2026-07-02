@@ -3,17 +3,24 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import HistoryPanel from '../components/HistoryPanel';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import ImportModal from '../components/ImportModal';
 
-const statusBadge = (stock, min) => {
+const statusBadge = (item) => {
+  const stock = item.stock || 0;
+  const minStock = item.min_stock || item.reorder_quantity || 0;
+  const safetyStock = item.safety_stock || 0;
+  const eop = item.emergency_order_point || 0;
   if (stock === 0) return <span className="badge badge-out">Out of Stock</span>;
-  if (stock < 10) return <span className="badge badge-low">Low Stock</span>;
+  if (eop > 0 && stock <= eop) return <span className="badge badge-low">Emergency</span>;
+  if (safetyStock > 0 && stock <= safetyStock) return <span className="badge badge-low">Safety Level</span>;
+  if (minStock > 0 && stock < minStock) return <span className="badge badge-low">Low Stock</span>;
   return <span className="badge badge-ok">Adequate</span>;
 };
 
-const emptyForm = { name: '', category_id: '', unit: '', stock: 0, reorder_quantity: 0, description: '', batch_no: '', expiry_date: '' };
+const emptyForm = { name: '', category_id: '', unit: '', stock: 0, reorder_quantity: 0, description: '', batch_no: '', expiry_date: '', sku: '', min_stock: 0, max_stock: 0, safety_stock: 0, emergency_order_point: 0, monthly_consumption: 0, avg_consumption: 0, daily_usage: 0, mos: 0 };
 
 export default function Inventory() {
   const { user } = useAuth();
@@ -60,9 +67,14 @@ export default function Inventory() {
   const items = (() => {
     if (!status) return allItems;
     const priority = (item) => {
-      const reorder = item.reorder_quantity || 0;
-      if (item.stock === 0) return 'out';
-      if (item.stock < 10) return 'low';
+      const stock = item.stock || 0;
+      const minStock = item.min_stock || item.reorder_quantity || 0;
+      const safetyStock = item.safety_stock || 0;
+      const eop = item.emergency_order_point || 0;
+      if (stock === 0) return 'out';
+      if (eop > 0 && stock <= eop) return 'emergency';
+      if (safetyStock > 0 && stock <= safetyStock) return 'safety';
+      if (minStock > 0 && stock < minStock) return 'low';
       return 'ok';
     };
     return allItems.filter(item => priority(item) === status);
@@ -117,7 +129,7 @@ export default function Inventory() {
   };
 
   const openEdit = (item) => {
-    setForm({ name: item.name, category_id: item.category_id, unit: item.unit, stock: item.stock, reorder_quantity: item.reorder_quantity, description: item.description || '', batch_no: item.batch_no || '', expiry_date: item.expiry_date ? item.expiry_date.substring(0, 10) : '' });
+    setForm({ name: item.name, category_id: item.category_id, unit: item.unit, stock: item.stock, reorder_quantity: item.reorder_quantity, description: item.description || '', batch_no: item.batch_no || '', expiry_date: item.expiry_date ? item.expiry_date.substring(0, 10) : '', sku: item.sku || '', min_stock: item.min_stock || 0, max_stock: item.max_stock || 0, safety_stock: item.safety_stock || 0, emergency_order_point: item.emergency_order_point || 0, monthly_consumption: item.monthly_consumption || 0, avg_consumption: item.avg_consumption || 0, daily_usage: item.daily_usage || 0, mos: item.mos || 0 });
     setEditId(item.id);
     setModal('edit');
   };
@@ -185,6 +197,8 @@ export default function Inventory() {
           <option value="">All statuses</option>
           <option value="ok">Adequate</option>
           <option value="low">Low Stock</option>
+          <option value="safety">Safety Level</option>
+          <option value="emergency">Emergency</option>
           <option value="out">Out of Stock</option>
         </select>
         <input type="date" className="input w-44" value={historyDate} onChange={e => setHistoryDate(e.target.value)} title="Filter inventory as of this date" />
@@ -196,22 +210,25 @@ export default function Inventory() {
           <table className="w-full">
             <thead>
               <tr className="bg-green-700">
-                {['Name','Category','Unit','Stock','Reorder Qty','Batch No.','Expiry Date','Status','Actions'].map(h => <th key={h} className="table-th">{h}</th>)}
+                {['SKU','Name','Category','Unit','Stock','Min','Max','Safety','Reorder','Avg/Mo','Status','Actions'].map(h => <th key={h} className="table-th">{h}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
-                <tr><td colSpan={9} className="table-td text-center py-10 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={12} className="table-td text-center py-10 text-gray-400">Loading...</td></tr>
                ) : items.length ? items.map((item, idx) => (
-                <tr key={item.id} className={`hover:bg-green-100 dark:hover:bg-green-900/40 hover:shadow-sm hover:border-l-4 hover:border-l-green-600 transition-all duration-150 ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-750'}`}>
+                <tr key={item.id} className={`hover:bg-green-100 dark:hover:bg-green-900/40 hover:shadow-sm hover:border-l-4 hover:border-l-green-600 transition-all duration-150 ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-700/60'}`}>
+                  <td className="table-td text-xs text-gray-500 font-mono">{item.sku || '—'}</td>
                   <td className="table-td font-medium">{item.name}</td>
                   <td className="table-td"><span className="badge badge-cat">{item.category_name}</span></td>
                   <td className="table-td text-gray-500">{item.unit}</td>
                   <td className="table-td font-semibold">{item.stock}</td>
+                  <td className="table-td text-gray-500">{item.min_stock || '—'}</td>
+                  <td className="table-td text-gray-500">{item.max_stock || '—'}</td>
+                  <td className="table-td text-gray-500">{item.safety_stock || '—'}</td>
                   <td className="table-td text-gray-500">{item.reorder_quantity}</td>
-                  <td className="table-td text-gray-500">{item.batch_no || '—'}</td>
-                  <td className="table-td text-gray-500">{item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : '—'}</td>
-                  <td className="table-td">{statusBadge(item.stock, item.reorder_quantity)}</td>
+                  <td className="table-td text-gray-500">{item.avg_consumption || '—'}</td>
+                  <td className="table-td">{statusBadge(item)}</td>
                   <td className="table-td">
                     <div className="flex items-center gap-2">
                       <button className="btn btn-sm btn-primary" onClick={() => { setSelectedItem(item); setTxForm({ quantity: '', destination: '', dispatched_by: '', supplier: '', received_by: '', invoice_ref: '', notes: '', batch_no: '', expiry_date: '' }); setModal('dispatch'); }}>Dispatch</button>
@@ -221,7 +238,7 @@ export default function Inventory() {
                     </div>
                   </td>
                 </tr>
-              )) : <tr><td colSpan={9} className="table-td text-center py-10 text-gray-400">No consumables found</td></tr>}
+              )) : <tr><td colSpan={12} className="table-td text-center py-10 text-gray-400">No consumables found</td></tr>}
             </tbody>
           </table>
         </div>
@@ -246,7 +263,7 @@ export default function Inventory() {
                       <span className="font-medium truncate">{selectedItem.name}</span>
                       <span className="text-xs text-gray-400">({selectedItem.unit})</span>
                       <span className="text-xs text-gray-500 ml-1">Stock: {selectedItem.stock}</span>
-                      {statusBadge(selectedItem.stock, selectedItem.reorder_quantity)}
+                      {statusBadge(selectedItem)}
                     </span>
                   ) : form.name ? (
                     <span className="font-medium truncate">{form.name}</span>
@@ -295,7 +312,7 @@ export default function Inventory() {
                                 <span className="text-xs text-gray-500">Stock: <span className={c.stock === 0 ? 'text-red-500 font-medium' : c.stock <= (c.reorder_quantity || 0) ? 'text-amber-500 font-medium' : ''}>{c.stock}</span></span>
                               </div>
                             </div>
-                            <div className="flex-shrink-0 ml-2">{statusBadge(c.stock, c.reorder_quantity)}</div>
+                            <div className="flex-shrink-0 ml-2">{statusBadge(c)}</div>
                           </button>
                         ))
                       )}
@@ -308,11 +325,11 @@ export default function Inventory() {
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold text-gray-800">{selectedItem.name}</span>
-                    {statusBadge(selectedItem.stock, selectedItem.reorder_quantity)}
+                    {statusBadge(selectedItem)}
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div><span className="text-gray-400">Category:</span> <span className="text-gray-600">{selectedItem.category_name || '—'}</span></div>
-                    <div><span className="text-gray-400">Unit:</span> <span className="text-gray-600">{selectedItem.unit}</span></div>
+                    <div><span className="text-gray-400">Unit of Issue:</span> <span className="text-gray-600">{selectedItem.unit}</span></div>
                     <div><span className="text-gray-400">In Stock:</span> <span className={`font-medium ${selectedItem.stock === 0 ? 'text-red-500' : selectedItem.stock <= (selectedItem.reorder_quantity || 0) ? 'text-amber-500' : 'text-green-600'}`}>{selectedItem.stock}</span></div>
                   </div>
                   {selectedItem.description && <p className="text-xs text-gray-400 mt-2 border-t border-gray-200 pt-2">{selectedItem.description}</p>}
@@ -329,26 +346,54 @@ export default function Inventory() {
                 {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </datalist>
             </div>
-            <div><label className="label">Unit *</label>
+            <div><label className="label">Unit of Issue *</label>
               <input className="input" list="unit-list" value={form.unit} onChange={f('unit')} placeholder="Type or select..." />
               <datalist id="unit-list">
                 {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
               </datalist>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {modal === 'add' && <div><label className="label">In Stock</label><div className="input bg-gray-100 text-gray-700">{selectedItem ? selectedItem.stock : 0}</div></div>}
-            <div>
-              <label className="label flex items-center gap-1">Reorder Quantity <span className="text-xs text-gray-400">(must be {'<'} stock)</span></label>
-              <input className={`input ${formError ? 'border-red-500' : ''}`} type="number" min="0" value={form.reorder_quantity} onChange={(e) => { setFormError(''); f('reorder_quantity')(e); }} />
-              {formError && <p className="text-red-600 text-xs mt-1">{formError}</p>}
+          {modal === 'add' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="label">SKU / Item Code</label><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
+              <div><label className="label">In Stock</label><div className="input bg-gray-100 text-gray-700">{selectedItem ? selectedItem.stock : 0}</div></div>
             </div>
-          </div>
+          )}
+          {modal === 'edit' && (
+            <div><label className="label">SKU / Item Code</label><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
+          )}
+          <div><label className="label">Description</label><input className="input" value={form.description} onChange={f('description')} /></div>
+          <fieldset className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 space-y-3">
+            <legend className="text-xs font-semibold text-gray-600 dark:text-gray-300 px-2">Inventory Levels</legend>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="label">Minimum Stock Level <span className="text-xs text-gray-400">(2-month stock)</span></label><input className="input" type="number" min="0" value={form.min_stock} onChange={f('min_stock')} /></div>
+              <div><label className="label">Maximum Stock Level <span className="text-xs text-gray-400">(4-month stock)</span></label><input className="input" type="number" min="0" value={form.max_stock} onChange={f('max_stock')} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="label">Safety Stock <span className="text-xs text-gray-400">(1-month stock)</span></label><input className="input" type="number" min="0" value={form.safety_stock} onChange={f('safety_stock')} /></div>
+              <div><label className="label">Emergency Order Point <span className="text-xs text-gray-400">(2-week stock)</span></label><input className="input" type="number" min="0" value={form.emergency_order_point} onChange={f('emergency_order_point')} /></div>
+            </div>
+          </fieldset>
+          <fieldset className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 space-y-3">
+            <legend className="text-xs font-semibold text-gray-600 dark:text-gray-300 px-2">Reorder & Consumption</legend>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="label flex items-center gap-1">Reorder Level <span className="text-xs text-gray-400">(must be {'<'} stock)</span></label>
+                <input className={`input ${formError ? 'border-red-500' : ''}`} type="number" min="0" value={form.reorder_quantity} onChange={(e) => { setFormError(''); f('reorder_quantity')(e); }} />
+              </div>
+              <div><label className="label">Monthly Consumption</label><input className="input" type="number" min="0" step="0.01" value={form.monthly_consumption} onChange={f('monthly_consumption')} /></div>
+              <div><label className="label">Average Consumption</label><input className="input" type="number" min="0" step="0.01" value={form.avg_consumption} onChange={f('avg_consumption')} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="label">Daily Usage Rate</label><input className="input" type="number" min="0" step="0.01" value={form.daily_usage} onChange={f('daily_usage')} /></div>
+              <div><label className="label">MOS (Months of Supply)</label><input className="input" type="number" min="0" step="0.01" value={form.mos} onChange={f('mos')} /></div>
+            </div>
+            {formError && <p className="text-red-600 text-xs mt-1">{formError}</p>}
+          </fieldset>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">Batch No.</label><input className="input" placeholder="BATCH-001" value={form.batch_no} onChange={f('batch_no')} /></div>
             <div><label className="label">Expiry Date</label><input className="input" type="date" value={form.expiry_date} onChange={f('expiry_date')} /></div>
           </div>
-          <div><label className="label">Description</label><input className="input" value={form.description} onChange={f('description')} /></div>
         </div>
       </Modal>
 
@@ -412,6 +457,10 @@ export default function Inventory() {
         onClose={() => setImportModalOpen(false)}
         onImport={handleImportCSV}
       />
+
+      <div className="mt-8">
+        <HistoryPanel entityType="consumable" title="Inventory Activity History" />
+      </div>
     </div>
   );
 }

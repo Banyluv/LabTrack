@@ -12,7 +12,10 @@ const auth = (req, res, next) => {
 };
 
 const adminOnly = (req, res, next) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  const role = (req.user.role || '').toLowerCase();
+  if (role !== 'admin' && role !== 'super_admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
   next();
 };
 

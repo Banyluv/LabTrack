@@ -137,7 +137,7 @@ const seed = async () => {
       INSERT INTO users (name, email, password, role)
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password
-    `, ['admin@labtrack.com', 'admin@labtrack.com', hash, 'admin']);
+    `, ['admin', 'admin@labtrack.com', hash, 'admin']);
 
     // Staff user with facility
     const staffHash = await bcrypt.hash('staff123', 10);
@@ -230,7 +230,7 @@ const seed = async () => {
     }
 
     await client.query('COMMIT');
-    console.log('✅ Seed completed. Admin login: admin@labtrack.com / admin123');
+    console.log('✅ Seed completed. Admin login: admin / admin123');
     console.log(`   ${consumables.length} consumable items inserted.`);
     console.log(`   ${units.length} units created.`);
     console.log(`   ${facilities.length} facilities created.`);

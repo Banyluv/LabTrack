@@ -4,7 +4,10 @@ const cors = require('cors');
 
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+}));
 app.use(express.json());
 
 app.use('/api/auth', require('./routes/auth'));
@@ -14,6 +17,13 @@ app.use('/api/reports/quarterly', require('./routes/quarterlyReports'));
 app.use('/api/units', require('./routes/units'));
 app.use('/api/facilities', require('./routes/facilities'));
 app.use('/api/suppliers', require('./routes/suppliers'));
+app.use('/api/stock-transfers', require('./routes/stockTransfers'));
+app.use('/api/procurement', require('./routes/procurement'));
+app.use('/api/activities', require('./routes/activities'));
+app.use('/api/stock-adjustments', require('./routes/stockAdjustments'));
+app.use('/api/daily-usage', require('./routes/dailyUsage'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/chat', require('./routes/chat'));
 app.use('/api', require('./routes/transactions'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));

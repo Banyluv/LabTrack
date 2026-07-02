@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import HistoryPanel from '../components/HistoryPanel';
 
-const statusBadge = (stock, min) => {
-  if (stock === 0) return <span className="badge badge-out text-xs">Out of Stock</span>;
-  if (stock <= (min || 0)) return <span className="badge badge-low text-xs">Low Stock</span>;
-  return <span className="badge badge-ok text-xs">Adequate</span>;
+const getStockStatus = (stock, min_stock, safety_stock, emergency_order_point) => {
+  if (stock === 0) return { label: 'Out of Stock', className: 'badge badge-out text-xs' };
+  if (stock <= (emergency_order_point || 0)) return { label: 'Emergency', className: 'badge badge-out text-xs' };
+  if (stock <= (safety_stock || 0)) return { label: 'Safety Stock', className: 'badge badge-low text-xs' };
+  if (stock <= (min_stock || 0)) return { label: 'Low Stock', className: 'badge badge-low text-xs' };
+  return { label: 'Adequate', className: 'badge badge-ok text-xs' };
 };
 
 export default function RequestConsumables() {
@@ -17,6 +20,7 @@ export default function RequestConsumables() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantity, setQuantity] = useState('');
   const [notes, setNotes] = useState('');
+  const [requestingOfficer, setRequestingOfficer] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,13 +67,15 @@ export default function RequestConsumables() {
       await api.post('/requests', {
         consumable_id: selectedConsumable,
         quantity: parseInt(quantity),
-        notes
+        notes,
+        requesting_officer: requestingOfficer
       });
       toast.success('Request submitted successfully!');
       setSelectedConsumable('');
       setSelectedItem(null);
       setQuantity('');
       setNotes('');
+      setRequestingOfficer('');
       fetchMyRequests();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to submit request');
@@ -126,7 +132,10 @@ export default function RequestConsumables() {
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{selectedItem.name}</span>
-                    {statusBadge(selectedItem.stock, selectedItem.reorder_quantity)}
+                    {(() => {
+                      const s = getStockStatus(selectedItem.stock, selectedItem.min_stock, selectedItem.safety_stock, selectedItem.emergency_order_point);
+                      return <span className={s.className}>{s.label}</span>;
+                    })()}
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
@@ -139,13 +148,27 @@ export default function RequestConsumables() {
                     </div>
                     <div>
                       <span className="text-gray-400 dark:text-gray-500">In Stock:</span>
-                      <span className={`ml-1 font-medium ${selectedItem.stock === 0 ? 'text-red-500' : selectedItem.stock <= (selectedItem.reorder_quantity || 0) ? 'text-amber-500' : 'text-green-600 dark:text-green-400'}`}>
+                      <span className={`ml-1 font-medium ${
+                        selectedItem.stock === 0 ? 'text-red-500' 
+                        : selectedItem.stock <= (selectedItem.emergency_order_point || 0) ? 'text-red-500'
+                        : selectedItem.stock <= (selectedItem.safety_stock || 0) ? 'text-amber-500'
+                        : selectedItem.stock <= (selectedItem.min_stock || 0) ? 'text-amber-500'
+                        : 'text-green-600 dark:text-green-400'
+                      }`}>
                         {selectedItem.stock}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-400 dark:text-gray-500">Reorder At:</span>
-                      <span className="ml-1 text-gray-600 dark:text-gray-300">{selectedItem.reorder_quantity || 0}</span>
+                      <span className="text-gray-400 dark:text-gray-500">Min Stock:</span>
+                      <span className="ml-1 text-gray-600 dark:text-gray-300">{selectedItem.min_stock || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 dark:text-gray-500">Safety Stock:</span>
+                      <span className="ml-1 text-gray-600 dark:text-gray-300">{selectedItem.safety_stock || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 dark:text-gray-500">Emergency Pt:</span>
+                      <span className="ml-1 text-gray-600 dark:text-gray-300">{selectedItem.emergency_order_point || 0}</span>
                     </div>
                   </div>
                   {selectedItem.description && (
@@ -166,6 +189,17 @@ export default function RequestConsumables() {
                   placeholder="Enter quantity"
                   min="1"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="label dark:text-gray-300">Requesting Officer (Optional)</label>
+                <input
+                  type="text"
+                  className="input dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                  value={requestingOfficer}
+                  onChange={(e) => setRequestingOfficer(e.target.value)}
+                  placeholder="Name of requesting officer"
                 />
               </div>
 
@@ -211,29 +245,47 @@ export default function RequestConsumables() {
                         {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      <strong>Requested:</strong> {req.quantity} {req.unit}
-                    </p>
-                    {req.status === 'approved' && req.approved_quantity != null && (
-                      <p className="text-sm text-green-600 dark:text-green-400 font-medium">
-                        <strong>Approved:</strong> {req.approved_quantity} {req.unit}
-                      </p>
-                    )}
-                    {req.notes && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        <strong>Notes:</strong> {req.notes}
-                      </p>
-                    )}
-                    {req.admin_comment && (
-                      <p className="text-sm text-blue-600 dark:text-blue-400 italic mt-1">
-                        <strong>Reason:</strong> {req.admin_comment}
-                      </p>
-                    )}
-                    {req.approved_by && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        <strong>Approved by:</strong> {req.approved_by}
-                      </p>
-                    )}
+                    <div className="space-y-1.5 text-sm">
+                      {/* Quantity Requested */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 w-20 font-medium">Requested:</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-semibold">{req.quantity} {req.unit}</span>
+                      </div>
+                      
+                      {/* Quantity Approved (only for approved requests) */}
+                      {req.status === 'approved' && req.approved_quantity != null && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-600 dark:text-green-400 w-20 font-medium">Approved:</span>
+                          <span className="text-green-700 dark:text-green-300 font-bold text-base">{req.approved_quantity} {req.unit}</span>
+                          {req.approved_quantity < req.quantity && (
+                            <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">Partial</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Reason for approval (admin_comment) */}
+                      {req.admin_comment && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-2 mt-1">
+                          <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-0.5">Reason for {req.status === 'approved' ? 'Approved Quantity' : 'Rejection'}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 italic">&ldquo;{req.admin_comment}&rdquo;</p>
+                        </div>
+                      )}
+                      
+                      {/* Notes */}
+                      {req.notes && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <strong className="text-gray-600 dark:text-gray-300">Notes:</strong> {req.notes}
+                        </div>
+                      )}
+                      
+                      {/* Approved By */}
+                      {req.approved_by && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-gray-600 dark:text-gray-300">Approved by:</span>
+                          <span>{req.approved_by}</span>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                       {new Date(req.created_at).toLocaleDateString()}
                     </p>
@@ -243,6 +295,10 @@ export default function RequestConsumables() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <HistoryPanel entityType="request" title="Request History" />
       </div>
     </div>
   );

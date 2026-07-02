@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import DeliveryNote from '../components/DeliveryNote';
+import HistoryPanel from '../components/HistoryPanel';
 
 export default function ApproveRequests() {
   const [requests, setRequests] = useState([]);
@@ -11,6 +13,7 @@ export default function ApproveRequests() {
   const [approvedQuantity, setApprovedQuantity] = useState('');
   const [adminComment, setAdminComment] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [deliveryNoteRequest, setDeliveryNoteRequest] = useState(null);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -36,13 +39,13 @@ export default function ApproveRequests() {
   const handleSelectRequest = (req) => {
     setSelectedRequest(req);
     setApprovalNotes('');
-    setApprovedQuantity(req.quantity);
+    setApprovedQuantity(Math.min(req.quantity, req.consumable_stock ?? req.quantity));
     setAdminComment('');
   };
 
   const handleApprove = async () => {
     if (!selectedRequest) return;
-    
+
     setActionLoading(true);
     try {
       const qty = approvedQuantity !== '' ? parseInt(approvedQuantity) : selectedRequest.quantity;
@@ -51,7 +54,7 @@ export default function ApproveRequests() {
         setActionLoading(false);
         return;
       }
-      if (qty > (selectedRequest.consumable_stock || 0)) {
+      if (qty > (selectedRequest.consumable_stock ?? 0)) {
         toast.error(`Insufficient stock. Available: ${selectedRequest.consumable_stock}`);
         setActionLoading(false);
         return;
@@ -62,6 +65,7 @@ export default function ApproveRequests() {
         admin_comment: adminComment,
       });
       toast.success('Request approved!');
+      toast('📧 Email notification sent to staff', { icon: '📬' });
       setSelectedRequest(null);
       setApprovalNotes('');
       setApprovedQuantity('');
@@ -76,14 +80,15 @@ export default function ApproveRequests() {
 
   const handleReject = async () => {
     if (!selectedRequest) return;
-    
+
     setActionLoading(true);
     try {
       await api.put(`/requests/${selectedRequest.id}/reject`, {
         notes: approvalNotes,
         admin_comment: adminComment,
       });
-      toast.success('Request rejected!');
+      toast.success('Request rejected');
+      toast('📧 Email notification sent to staff', { icon: '📬' });
       setSelectedRequest(null);
       setApprovalNotes('');
       setApprovedQuantity('');
@@ -97,11 +102,15 @@ export default function ApproveRequests() {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+    switch (status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -220,7 +229,7 @@ export default function ApproveRequests() {
                     <div className="w-px h-10 bg-blue-200"></div>
                     <div>
                       <p className="text-xs font-semibold text-blue-500 uppercase tracking-wider">In Stock</p>
-                      <p className={`text-2xl font-bold ${(selectedRequest.consumable_stock || 0) >= selectedRequest.quantity ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className={`text-2xl font-bold ${(selectedRequest.consumable_stock ?? 0) >= selectedRequest.quantity ? 'text-green-600' : 'text-red-600'}`}>
                         {selectedRequest.consumable_stock ?? 0} <span className="text-sm font-normal text-gray-400">{selectedRequest.unit}</span>
                       </p>
                     </div>
@@ -235,6 +244,34 @@ export default function ApproveRequests() {
                   </div>
                 )}
 
+                {/* Approved quantity & admin comment for processed requests */}
+                {selectedRequest.status !== 'pending' && (
+                  <div className="space-y-2 mt-1">
+                    {selectedRequest.approved_quantity != null && selectedRequest.status === 'approved' && (
+                      <div className="flex gap-3">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider w-36 shrink-0 pt-0.5">Quantity Approved</span>
+                        <span className="text-sm font-bold text-green-700">{selectedRequest.approved_quantity} {selectedRequest.unit}
+                          {selectedRequest.approved_quantity < selectedRequest.quantity && (
+                            <span className="ml-1 text-xs text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">Partial</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {selectedRequest.admin_comment && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Reason for {selectedRequest.status === 'approved' ? 'Approved Quantity' : 'Rejection'}</p>
+                        <p className="text-sm text-gray-700 italic">&ldquo;{selectedRequest.admin_comment}&rdquo;</p>
+                      </div>
+                    )}
+                    {selectedRequest.approved_by && (
+                      <div className="flex gap-3">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider w-36 shrink-0 pt-0.5">Approved By</span>
+                        <span className="text-sm font-semibold text-gray-900">{selectedRequest.approved_by}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Status */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</span>
@@ -242,6 +279,16 @@ export default function ApproveRequests() {
                     {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
                   </span>
                 </div>
+
+                {/* Delivery Note Button (for approved requests) */}
+                {selectedRequest.status === 'approved' && (
+                  <button
+                    onClick={() => setDeliveryNoteRequest(selectedRequest)}
+                    className="w-full py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2"
+                  >
+                    🖨️ Print Delivery Note
+                  </button>
+                )}
               </div>
 
               {/* Approval Form (only for pending) */}
@@ -254,10 +301,17 @@ export default function ApproveRequests() {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">Quantity to Approve <span className="text-red-500">*</span></label>
                       <div className="flex items-center gap-2">
-                        <input type="number" min="1" max={selectedRequest.consumable_stock || selectedRequest.quantity} className="input text-lg font-bold w-28 text-center" value={approvedQuantity} onChange={(e) => setApprovedQuantity(e.target.value)} />
+                        <input
+                          type="number"
+                          min="1"
+                          max={selectedRequest.consumable_stock ?? selectedRequest.quantity}
+                          className="input text-lg font-bold w-28 text-center"
+                          value={approvedQuantity}
+                          onChange={(e) => setApprovedQuantity(e.target.value)}
+                        />
                         <span className="text-sm text-gray-500">{selectedRequest.unit}</span>
                       </div>
-                      {approvedQuantity !== '' && parseInt(approvedQuantity) > (selectedRequest.consumable_stock || 0) && (
+                      {approvedQuantity !== '' && parseInt(approvedQuantity) > (selectedRequest.consumable_stock ?? 0) && (
                         <p className="text-xs text-red-600 mt-1.5">Not enough stock &mdash; only {selectedRequest.consumable_stock ?? 0} {selectedRequest.unit} available</p>
                       )}
                       {approvedQuantity !== '' && parseInt(approvedQuantity) > 0 && parseInt(approvedQuantity) < selectedRequest.quantity && (
@@ -293,6 +347,18 @@ export default function ApproveRequests() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Delivery Note Modal */}
+      {deliveryNoteRequest && (
+        <DeliveryNote
+          request={deliveryNoteRequest}
+          onClose={() => setDeliveryNoteRequest(null)}
+        />
+      )}
+
+      <div className="mt-6">
+        <HistoryPanel entityType="request" title="Approval History" />
       </div>
     </div>
   );

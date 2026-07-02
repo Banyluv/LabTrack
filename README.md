@@ -51,7 +51,7 @@ npm run dev
 Backend runs on: `http://localhost:5000`
 
 Default admin credentials:
-- Email: `admin@labtrack.com`
+- Username: `admin`
 - Password: `admin123`
 
 ### 3. Frontend Setup

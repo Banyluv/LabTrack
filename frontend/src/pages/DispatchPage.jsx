@@ -4,11 +4,13 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import Modal from '../components/Modal';
+import HistoryPanel from '../components/HistoryPanel';
+import ExportButton from '../components/ExportButton';
 
 export default function DispatchPage() {
   const qc = useQueryClient();
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ consumable_id: '', quantity: '', destination: '', dispatched_by: '', notes: '' });
+  const [form, setForm] = useState({ consumable_id: '', quantity: '', issued_quantity: '', returned_quantity: '', receiving_officer: '', destination: '', dispatched_by: '', notes: '' });
   const [filters, setFilters] = useState({ from: '', to: '', destination: '' });
 
   const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables').then(r => r.data) });
@@ -32,12 +34,15 @@ export default function DispatchPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Dispatch Log</h1>
           <p className="text-sm text-gray-500">{logs.length} records</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setModal(true)}>+ New Dispatch</button>
+        <div className="flex gap-3 flex-wrap">
+          <ExportButton label="Export Dispatch Log" endpoint="/dispatch/export" fileName="dispatch-log.xlsx" />
+          <button className="btn btn-primary" onClick={() => setModal(true)}>+ New Dispatch</button>
+        </div>
       </div>
 
       <div className="flex gap-3 mb-4 flex-wrap">
@@ -71,6 +76,10 @@ export default function DispatchPage() {
         </div>
       </div>
 
+      <div className="mt-8">
+        <HistoryPanel entityType="dispatch" title="Dispatch Activity History" />
+      </div>
+
       <Modal open={modal} onClose={() => setModal(false)} title="New Dispatch to Hospital"
         footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Cancel</button><button className="btn btn-danger" onClick={handleSubmit}>Confirm Dispatch</button></>}>
         <div className="space-y-4">
@@ -84,6 +93,11 @@ export default function DispatchPage() {
             <div><label className="label">Quantity *</label><input className="input" type="number" min="1" value={form.quantity} onChange={f('quantity')} /></div>
             <div><label className="label">Destination *</label><input className="input" placeholder="Ward / Dept" value={form.destination} onChange={f('destination')} /></div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="label">Issued Quantity</label><input className="input" type="number" min="0" value={form.issued_quantity} onChange={f('issued_quantity')} /></div>
+            <div><label className="label">Returned Quantity</label><input className="input" type="number" min="0" value={form.returned_quantity} onChange={f('returned_quantity')} /></div>
+          </div>
+          <div><label className="label">Receiving Officer</label><input className="input" placeholder="Name of receiving officer" value={form.receiving_officer} onChange={f('receiving_officer')} /></div>
           <div><label className="label">Dispatched By *</label><input className="input" placeholder="Staff name" value={form.dispatched_by} onChange={f('dispatched_by')} /></div>
           <div><label className="label">Notes</label><input className="input" placeholder="Optional" value={form.notes} onChange={f('notes')} /></div>
         </div>
