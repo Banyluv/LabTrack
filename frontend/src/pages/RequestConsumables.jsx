@@ -23,6 +23,8 @@ export default function RequestConsumables() {
   const [requestingOfficer, setRequestingOfficer] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [balance, setBalance] = useState(null);
+  const [checkingBalance, setCheckingBalance] = useState(false);
 
   useEffect(() => {
     fetchConsumables();
@@ -50,9 +52,22 @@ export default function RequestConsumables() {
     }
   };
 
-  const handleSelect = (c) => {
+  const handleSelect = async (c) => {
     setSelectedConsumable(c.id);
     setSelectedItem(c);
+    setBalance(null);
+
+    // Check balance eligibility for this consumable
+    setCheckingBalance(true);
+    try {
+      const { data } = await api.get(`/balance/check/${c.id}`);
+      setBalance(data);
+    } catch (err) {
+      console.error('Balance check failed:', err);
+      setBalance(null);
+    } finally {
+      setCheckingBalance(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -61,10 +76,16 @@ export default function RequestConsumables() {
       toast.error('Please select a consumable and quantity');
       return;
     }
+
+    // Frontend balance guard
+    if (balance && !balance.allowed) {
+      toast.error(balance.reason || 'Cannot request — previous dispatch not yet fully accounted for in daily usage.');
+      return;
+    }
     
     setSubmitting(true);
     try {
-      await api.post('/requests', {
+      const { data } = await api.post('/requests', {
         consumable_id: selectedConsumable,
         quantity: parseInt(quantity),
         notes,
@@ -76,9 +97,15 @@ export default function RequestConsumables() {
       setQuantity('');
       setNotes('');
       setRequestingOfficer('');
+      setBalance(null);
       fetchMyRequests();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to submit request');
+      const errData = err.response?.data;
+      if (errData?.code === 'BALANCE_NOT_SETTLED') {
+        toast.error(errData.error || 'Cannot request — balance not settled.', { duration: 6000 });
+      } else {
+        toast.error(errData?.error || 'Failed to submit request');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -171,6 +198,91 @@ export default function RequestConsumables() {
                       <span className="ml-1 text-gray-600 dark:text-gray-300">{selectedItem.emergency_order_point || 0}</span>
                     </div>
                   </div>
+
+                  {/* Balance & Forecast Section */}
+                  {checkingBalance ? (
+                    <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <div className="w-3 h-3 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                        Checking balance...
+                      </div>
+                    </div>
+                  ) : balance ? (
+                    <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <div className={`rounded-md p-2 text-xs ${
+                        balance.allowed 
+                          ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
+                          : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                      }`}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className={`w-2 h-2 rounded-full ${balance.allowed ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className={`font-semibold ${balance.allowed ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                            {balance.allowed ? 'Eligible to Request' : 'Not Eligible'}
+                          </span>
+                        </div>
+
+                        {balance.balance && (
+                          <div className="space-y-0.5 text-gray-600 dark:text-gray-400">
+                            <div className="flex justify-between">
+                              <span>Dispatched (Total):</span>
+                              <span className="font-medium text-gray-800 dark:text-gray-200">{balance.balance.total_dispatched} {selectedItem.unit}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Used (Daily Log):</span>
+                              <span className="font-medium text-gray-800 dark:text-gray-200">{balance.balance.total_used} {selectedItem.unit}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-gray-300 dark:border-gray-600 pt-0.5">
+                              <span className="font-semibold">Remaining Balance:</span>
+                              <span className={`font-bold ${balance.balance.balance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'}`}>
+                                {balance.balance.balance} {selectedItem.unit}
+                              </span>
+                            </div>
+
+                            {/* Forecast */}
+                            {balance.balance.daily_usage_rate > 0 && (
+                              <div className="mt-2 pt-1.5 border-t border-gray-300 dark:border-gray-600">
+                                <div className="flex justify-between">
+                                  <span>Daily Usage Rate:</span>
+                                  <span className="font-medium">{balance.balance.daily_usage_rate} {selectedItem.unit}/day</span>
+                                </div>
+                                {balance.balance.days_remaining != null && (
+                                  <div className="flex justify-between">
+                                    <span>Est. Days Remaining:</span>
+                                    <span className={`font-bold ${
+                                      balance.balance.days_remaining <= 0 ? 'text-red-600' 
+                                      : balance.balance.days_remaining <= 3 ? 'text-amber-600' 
+                                      : 'text-green-600'
+                                    }`}>
+                                      {balance.balance.days_remaining <= 0 ? 'Depleted' : `${balance.balance.days_remaining} days`}
+                                    </span>
+                                  </div>
+                                )}
+                                {balance.balance.forecast_date && (
+                                  <div className="flex justify-between">
+                                    <span>Next Distribution Forecast:</span>
+                                    <span className="font-medium text-teal-600 dark:text-teal-400">{balance.balance.forecast_date}</span>
+                                  </div>
+                                )}
+                                {balance.balance.last_dispatch_date && (
+                                  <div className="flex justify-between">
+                                    <span>Last Dispatch:</span>
+                                    <span className="text-gray-500">{new Date(balance.balance.last_dispatch_date).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {!balance.allowed && (
+                          <p className="mt-1.5 text-red-600 dark:text-red-400 text-xs leading-relaxed">
+                            {balance.reason || 'Cannot request at this time.'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+
                   {selectedItem.description && (
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 border-t border-gray-200 dark:border-gray-600 pt-2">
                       {selectedItem.description}
@@ -216,8 +328,8 @@ export default function RequestConsumables() {
 
               <button
                 type="submit"
-                disabled={submitting}
-                className="btn btn-primary w-full"
+                disabled={submitting || (balance && !balance.allowed)}
+                className={`btn btn-primary w-full ${(balance && !balance.allowed) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {submitting ? 'Submitting...' : 'Submit Request'}
               </button>

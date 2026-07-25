@@ -120,7 +120,7 @@ export default function Facilities() {
               {isLoading ? (
                 <tr><td colSpan={4} className="table-td text-center py-10 text-gray-400">Loading...</td></tr>
               ) : facilities.length ? facilities.map(f => (
-                <tr key={f.id} className="hover:bg-gray-50">
+<tr key={f.id} className="bg-white hover:bg-green-100">
                   <td className="table-td font-medium">{f.name}</td>
                   <td className="table-td">{f.state || '—'}</td>
                   <td className="table-td">{f.lga || '—'}</td>

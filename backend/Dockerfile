@@ -1,7 +1,7 @@
-FROM node:18-alpine
+FROM python:3.13-slim
 WORKDIR /app
-COPY package*.json ./
-RUN npm install --production
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 5000
-CMD ["sh", "-c", "node src/config/migrate.js && node src/config/seed.js && node src/index.js"]
+CMD ["sh", "-c", "python -m app.scripts.migrate && python -m app.scripts.seed && uvicorn app.main:app --host 0.0.0.0 --port 5000"]

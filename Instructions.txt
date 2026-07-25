@@ -1,0 +1,5 @@
+To start the backend server, cd to backend using
+cd backend and then activate your environment 
+Then run python run.python
+To start the frontnd server, cd to frontend using cd frontend
+Then run node node_modules\vite\bin\vite.js --host

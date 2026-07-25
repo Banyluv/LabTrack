@@ -84,6 +84,17 @@ export default function StockTransfer() {
                 <option key={c._id} value={c._id}>{c.name}</option>
               ))}
             </select>
+            {selectedConsumable && (
+              <div className="mt-2 p-4 bg-green-600 dark:bg-green-700 border border-green-500 dark:border-green-600 rounded-lg shadow-sm">
+                <p className="text-base text-white font-medium">
+                  <span className="font-semibold">{selectedConsumable.name}</span>
+                  <span className="mx-3 text-green-200">|</span>
+                  <span className="text-green-100">Stock Balance:</span>{' '}
+                  <span className="font-bold text-2xl text-white">{selectedConsumable.stock ?? 0}</span>
+                  <span className="text-sm text-green-200 ml-1">{selectedConsumable.unit || 'units'}</span>
+                </p>
+              </div>
+            )}
           </div>
           <div className="md:col-span-2 grid grid-cols-3 gap-3">
             <div>

@@ -134,6 +134,7 @@ export default function Inventory() {
     setModal('edit');
   };
 
+  const [addQuantity, setAddQuantity] = useState(0);
   const [formError, setFormError] = useState('');
   const handleSave = () => {
     const rq = typeof form.reorder_quantity === 'number' ? form.reorder_quantity : parseInt(form.reorder_quantity) || 0;
@@ -143,8 +144,27 @@ export default function Inventory() {
       return;
     }
     setFormError('');
-    if (modal === 'add') createMut.mutate(form);
-    else updateMut.mutate({ id: editId, ...form, stock: undefined });
+    if (modal === 'add') {
+      if (selectedItem) {
+        // Existing consumable selected — add quantity to existing stock (receive)
+        const qty = parseInt(addQuantity) || 0;
+        if (qty <= 0) { toast.error('Enter a quantity to add'); return; }
+        receiveMut.mutate({
+          consumable_id: selectedItem.id,
+          quantity: qty,
+          received_by: user?.name || 'Admin',
+          supplier: txForm.supplier || '',
+          invoice_ref: txForm.invoice_ref || '',
+          batch_no: form.batch_no || '',
+          expiry_date: form.expiry_date || null,
+        });
+      } else {
+        // Brand new consumable — use quantity as initial stock
+        createMut.mutate({ ...form, stock: parseInt(addQuantity) || 0 });
+      }
+    } else {
+      updateMut.mutate({ id: editId, ...form, stock: undefined });
+    }
   };
 
   const handleDispatch = () => {
@@ -181,7 +201,7 @@ export default function Inventory() {
               <button className="btn btn-secondary" onClick={handleExport} disabled={exporting} title="Export to Excel">
                 {exporting ? '⏳ Exporting...' : '📤 Export Excel'}
               </button>
-              <button className="btn btn-primary" onClick={() => { setForm(emptyForm); setFormError(''); setSelectedItem(null); setConsumableSearch(''); setModal('add'); }}>+ Add Consumable</button>
+              <button className="btn btn-primary" onClick={() => { setForm(emptyForm); setFormError(''); setSelectedItem(null); setConsumableSearch(''); setAddQuantity(0); setModal('add'); }}>+ Add Consumable</button>
             </>
           )}
         </div>
@@ -210,7 +230,20 @@ export default function Inventory() {
           <table className="w-full">
             <thead>
               <tr className="bg-green-700">
-                {['SKU','Name','Category','Unit','Stock','Min','Max','Safety','Reorder','Avg/Mo','Status','Actions'].map(h => <th key={h} className="table-th">{h}</th>)}
+                {[
+                  'Stock Keeping Unit (SKU)',
+                  'Name',
+                  'Category',
+                  'Unit of Issue',
+                  'Stock Level',
+                  'Minimum Level (Min)',
+                  'Maximum Level (Max)',
+                  'Safety Stock Level (Safety)',
+                  'Reorder Level (Reorder)',
+                  'Average Monthly Consumption (Avg/Mo)',
+                  'Status',
+                  'Actions'
+                ].map(h => <th key={h} className="table-th">{h}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -354,10 +387,43 @@ export default function Inventory() {
             </div>
           </div>
           {modal === 'add' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="label">SKU / Item Code</label><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
-              <div><label className="label">In Stock</label><div className="input bg-gray-100 text-gray-700">{selectedItem ? selectedItem.stock : 0}</div></div>
-            </div>
+            <>
+              <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-teal-800">
+                    {selectedItem ? 'Add Quantity to Existing Stock' : 'Initial Stock Quantity'}
+                  </label>
+                  {selectedItem && (
+                    <span className="text-xs text-teal-600 bg-teal-100 px-2 py-0.5 rounded-full">
+                      Current: {selectedItem.stock} {selectedItem.unit}
+                    </span>
+                  )}
+                </div>
+                {selectedItem && (
+                  <p className="text-xs text-teal-600">
+                    The quantity you enter will be <strong>added</strong> to the existing stock of{' '}
+                    <strong>{selectedItem.stock} {selectedItem.unit}</strong>, resulting in{' '}
+                    <strong>{(selectedItem.stock + (parseInt(addQuantity) || 0))} {selectedItem.unit}</strong>.
+                  </p>
+                )}
+                <div>
+                  <label className="label">Quantity to Add *</label>
+                  <input
+                    className="input text-lg font-bold"
+                    type="number"
+                    min="0"
+                    placeholder="Enter quantity..."
+                    value={addQuantity}
+                    onChange={(e) => setAddQuantity(e.target.value)}
+                    autoFocus={!!selectedItem}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="label">SKU / Item Code</label><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
+                <div><label className="label">Unit of Issue</label><div className="input bg-gray-100 text-gray-700">{form.unit || '—'}</div></div>
+              </div>
+            </>
           )}
           {modal === 'edit' && (
             <div><label className="label">SKU / Item Code</label><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
