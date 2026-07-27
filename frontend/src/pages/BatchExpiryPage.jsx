@@ -146,13 +146,13 @@ export default function BatchExpiryPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-green-700 dark:bg-green-800 rounded-2xl shadow-lg">
+    <div className="p-6 max-w-7xl mx-auto bg-green-50 dark:bg-green-900/20 rounded-2xl shadow-lg">
       <div className="flex flex-col gap-2 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Batch & Expiry Overview</h1>
-          <p className="text-sm text-green-100">Track each batch number, expiry date, and remaining shelf life to prioritize what should be used first.</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Batch & Expiry Overview</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Track each batch number, expiry date, and remaining shelf life to prioritize what should be used first.</p>
         </div>
-        <p className="text-sm text-green-100 max-w-3xl">
+        <p className="text-sm text-gray-600 dark:text-gray-300 max-w-3xl">
           Use this page to find expired or soon-to-expire stock, confirm batch details, and make safer inventory decisions. Search by consumable name, batch number, or category, and filter to see only items that need immediate attention.
         </p>
       </div>
@@ -184,10 +184,10 @@ export default function BatchExpiryPage() {
       <div className="flex flex-col lg:flex-row gap-3 mb-6 items-end">
         <input className="input flex-1 min-w-48" placeholder="Search by consumable name, batch number, or category" value={search} onChange={e => setSearch(e.target.value)} />
         <div className="flex flex-col gap-1">
-          <label className="block text-xs font-medium text-white mb-1.5">Expiry Date Calendar</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1.5">Expiry Date Calendar</label>
           <input type="date" className="input w-full lg:w-56" value={calendarDate} onChange={e => setCalendarDate(e.target.value)} />
           {calendarDate && (
-            <button type="button" className="text-xs text-white underline self-start mt-1" onClick={() => setCalendarDate('')}>Clear date</button>
+            <button type="button" className="text-xs text-green-700 dark:text-green-300 underline self-start mt-1" onClick={() => setCalendarDate('')}>Clear date</button>
           )}
         </div>
         <select className="input w-full lg:w-48" value={expiryFilter} onChange={e => setExpiryFilter(e.target.value)}>
@@ -199,27 +199,27 @@ export default function BatchExpiryPage() {
         </select>
       </div>
 
-      <div className="bg-green-800 dark:bg-green-900 rounded-xl border border-green-600 dark:border-green-700 shadow-md overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-green-200 dark:border-green-800 shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead><tr>
-              {['Consumable','Category','Batch No.','Expiry Date','Days Left','Status','Qty','Supplier','Received'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-green-600 dark:bg-green-700 first:rounded-tl-lg last:rounded-tr-lg">{h}</th>)}
+              {['Consumable','Category','Batch No.','Expiry Date','Days Left','Status','Qty','Supplier','Received'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-bold text-green-900 dark:text-green-100 uppercase tracking-wider bg-green-100 dark:bg-green-900/40 first:rounded-tl-lg last:rounded-tr-lg">{h}</th>)}
             </tr></thead>
             <tbody>
-              {isLoading ? <tr><td colSpan={9} className="px-4 py-10 text-center text-green-200 text-sm">Loading...</td></tr>
+              {isLoading ? <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400 text-sm">Loading...</td></tr>
                : filteredRecords.length ? filteredRecords.map(rec => (
-                <tr key={rec.id} className={`border-t border-green-700 dark:border-green-600 hover:bg-green-700/50 ${rec.status === 'expired' ? 'bg-red-900/30' : rec.status === 'critical' ? 'bg-orange-900/20' : ''}`}>
-                  <td className="px-4 py-3 text-sm text-white font-medium">{rec.consumable_name}</td>
-                  <td className="px-4 py-3 text-sm text-white"><span className="badge badge-cat">{rec.category_name}</span></td>
-                  <td className="px-4 py-3 text-sm text-green-100 font-mono text-xs">{rec.batch_no || 'Not set'}</td>
-                  <td className="px-4 py-3 text-sm text-green-100 text-xs whitespace-nowrap">{rec.expiry_date ? format(new Date(rec.expiry_date), 'MMM d yyyy') : 'No expiry date'}</td>
-                  <td className="px-4 py-3 text-sm text-white font-semibold">{rec.daysUntilExpiry !== null ? (rec.daysUntilExpiry < 0 ? <span className="text-red-300">{Math.abs(rec.daysUntilExpiry)}d past</span> : `${rec.daysUntilExpiry}d`) : '—'}</td>
-                  <td className="px-4 py-3 text-sm text-white">{getStatusBadge(rec.status, rec.daysUntilExpiry)}</td>
-                  <td className="px-4 py-3 text-sm text-white">{rec.quantity || 'Unknown'}</td>
-                  <td className="px-4 py-3 text-sm text-green-100 text-xs">{rec.supplier || 'Unknown'}</td>
-                  <td className="px-4 py-3 text-sm text-green-100 text-xs whitespace-nowrap">{rec.received_at ? format(new Date(rec.received_at), 'MMM d yyyy') : 'Unknown'}</td>
+                <tr key={rec.id} className={`border-t border-green-100 dark:border-green-900/50 hover:bg-green-50 dark:hover:bg-green-900/30 ${rec.status === 'expired' ? 'bg-red-50 dark:bg-red-900/20' : rec.status === 'critical' ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">{rec.consumable_name}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white"><span className="badge badge-cat">{rec.category_name}</span></td>
+                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono text-xs">{rec.batch_no || 'Not set'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{rec.expiry_date ? format(new Date(rec.expiry_date), 'MMM d yyyy') : 'No expiry date'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-semibold">{rec.daysUntilExpiry !== null ? (rec.daysUntilExpiry < 0 ? <span className="text-red-600 dark:text-red-400">{Math.abs(rec.daysUntilExpiry)}d past</span> : `${rec.daysUntilExpiry}d`) : '—'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{getStatusBadge(rec.status, rec.daysUntilExpiry)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{rec.quantity || 'Unknown'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-xs">{rec.supplier || 'Unknown'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{rec.received_at ? format(new Date(rec.received_at), 'MMM d yyyy') : 'Unknown'}</td>
                 </tr>
-              )) : <tr><td colSpan={9} className="px-4 py-10 text-center text-green-200 text-sm">No batch records found</td></tr>}
+              )) : <tr><td colSpan={9} className="px-4 py-10 text-center text-gray-400 text-sm">No batch records found</td></tr>}
             </tbody>
           </table>
         </div>

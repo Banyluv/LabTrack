@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 import toast from 'react-hot-toast';
 
 export default function AdminLogin() {
@@ -45,7 +46,7 @@ export default function AdminLogin() {
             </div>
             <div>
               <label className="label">Password</label>
-              <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required />
+              <PasswordInput className="input" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
             <button type="submit" disabled={loading} className="btn bg-amber-500 hover:bg-amber-600 text-white w-full justify-center py-2.5">
               {loading ? (

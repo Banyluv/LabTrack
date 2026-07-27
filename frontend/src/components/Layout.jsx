@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NotificationBell from './NotificationBell';
 import ChatAssistant from './ChatAssistant';
+import EcewsLogo from './EcewsLogo';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', end: true, icon: (
@@ -76,16 +77,7 @@ const navItems = [
           <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
       )},
-      { to: '/dashboard/review-inventory', label: 'Review Inventory', icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-        </svg>
-      )},
-      { to: '/dashboard/manage-requests', label: 'Manage Requests', icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-        </svg>
-      )},
+
     ],
   },
   { to: '/dashboard/requests', label: 'Requests', icon: (
@@ -211,15 +203,10 @@ export default function Layout() {
     <>
       <div className="px-5 py-5 border-b border-emerald-500 dark:border-emerald-700">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-emerald-700 dark:bg-emerald-600 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-lg font-black text-white">ECEWS</p>
-              <p className="text-xs text-emerald-100 dark:text-emerald-200 font-bold">Consumables & Logistics Management System</p>
+          <div className="flex items-center min-w-0 flex-1">
+            {/* White plate so the green logo artwork reads against the emerald sidebar */}
+            <div className="bg-white rounded-lg px-3 py-2.5 w-full max-w-[196px] shadow-sm">
+              <EcewsLogo className="w-full h-auto" />
             </div>
           </div>
           {/* Close button - mobile only */}
@@ -341,8 +328,8 @@ export default function Layout() {
               </svg>
             </button>
             <div className="leading-tight">
-              <h1 className="text-xl font-black tracking-tight text-white">ECEWS</h1>
-              <p className="text-base font-semibold tracking-wide text-emerald-100 whitespace-nowrap">Consumables & Logistics Management System</p>
+              <p className="text-lg font-black text-white">ECEWS</p>
+              <p className="text-xs text-emerald-100 dark:text-emerald-200 font-bold">Consumables & Logistics Management System</p>
             </div>
           </div>
           <div className="flex items-center gap-1">

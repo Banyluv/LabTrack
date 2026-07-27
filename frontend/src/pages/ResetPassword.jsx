@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import PasswordInput from '../components/PasswordInput';
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -64,8 +65,7 @@ export default function ResetPassword() {
             )}
             <div>
               <label className="label">New password</label>
-              <input
-                type="password"
+              <PasswordInput
                 className="input"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -75,8 +75,7 @@ export default function ResetPassword() {
             </div>
             <div>
               <label className="label">Confirm password</label>
-              <input
-                type="password"
+              <PasswordInput
                 className="input"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}

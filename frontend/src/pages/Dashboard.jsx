@@ -55,14 +55,7 @@ export default function Dashboard() {
               </p>
               <p className="text-sm text-slate-400">Role: <span className="text-slate-100 font-semibold">{userRole}</span></p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button onClick={() => navigate('/inventory')} className="rounded-3xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-950/10 hover:bg-slate-100 transition">
-                Review inventory
-              </button>
-              <button onClick={() => navigate('/requests')} className="rounded-3xl border border-slate-700 bg-slate-900/80 px-5 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-800 transition">
-                Manage requests
-              </button>
-            </div>
+            <div className="grid gap-3 sm:grid-cols-2"></div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-[1.75rem] border border-slate-800 bg-slate-900/95 p-5 shadow-xl shadow-slate-950/20">

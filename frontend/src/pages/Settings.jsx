@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../utils/api';
+import PasswordInput from '../components/PasswordInput';
 import toast from 'react-hot-toast';
 
 export default function Settings() {
@@ -39,9 +40,9 @@ export default function Settings() {
         </div><button type="submit" disabled={saving} className="btn btn-primary">{saving ? "Saving..." : "Save Changes"}</button></form></div>
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm overflow-hidden"><div className="px-6 py-4 border-b"><h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Change Password</h2></div>
         <form onSubmit={handlePassword} className="p-6 space-y-4"><div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className={L}>Current Password</label><input type="password" className={I} value={passwords.current} onChange={e => setPasswords(p => ({ ...p, current: e.target.value }))} required /></div><div></div>
-            <div><label className={L}>New Password</label><input type="password" className={I} value={passwords.new} onChange={e => setPasswords(p => ({ ...p, new: e.target.value }))} required /></div>
-            <div><label className={L}>Confirm Password</label><input type="password" className={I} value={passwords.confirm} onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))} required /></div>
+            <div><label className={L}>Current Password</label><PasswordInput className={I} value={passwords.current} onChange={e => setPasswords(p => ({ ...p, current: e.target.value }))} required /></div><div></div>
+            <div><label className={L}>New Password</label><PasswordInput className={I} value={passwords.new} onChange={e => setPasswords(p => ({ ...p, new: e.target.value }))} required /></div>
+            <div><label className={L}>Confirm Password</label><PasswordInput className={I} value={passwords.confirm} onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))} required /></div>
         </div><button type="submit" disabled={changing} className="btn btn-primary">{changing ? "Changing..." : "Change Password"}</button></form></div>
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm overflow-hidden"><div className="px-6 py-4 border-b"><h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Appearance</h2></div>
         <div className="p-6 flex items-center justify-between"><div><p className="text-sm font-medium text-gray-900 dark:text-gray-100">Dark Mode</p><p className="text-xs text-gray-500 dark:text-gray-400">Toggle theme</p></div>

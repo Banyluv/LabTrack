@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import PasswordInput from '../components/PasswordInput';
 
 export default function UserManagement() {
   const qc = useQueryClient();
@@ -70,7 +71,7 @@ export default function UserManagement() {
             </div>
             <div>
               <label className="label dark:text-gray-300">Password</label>
-              <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} className="input dark:bg-gray-700 dark:text-white dark:border-gray-500" placeholder="Enter password" />
+              <PasswordInput value={form.password} onChange={e => setForm({...form, password: e.target.value})} className="input dark:bg-gray-700 dark:text-white dark:border-gray-500" placeholder="Enter password" />
             </div>
             <div>
               <label className="label dark:text-gray-300">Role</label>

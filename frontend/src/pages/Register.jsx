@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
+import PasswordInput from '../components/PasswordInput';
 import toast from 'react-hot-toast';
 
 const NigerianLGAs = {
@@ -155,11 +156,11 @@ export default function Register() {
             </div>
             <div>
               <label className="label">Password</label>
-              <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} required />
+              <PasswordInput className="input" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
             <div>
               <label className="label">Confirm Password</label>
-              <input type="password" className="input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+              <PasswordInput className="input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
             </div>
             <button type="submit" disabled={loading} className="btn btn-primary w-full justify-center py-2.5">
               {loading ? (
