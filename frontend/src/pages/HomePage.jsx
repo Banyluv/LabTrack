@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import EcewsLogo from '../components/EcewsLogo';
 
 const features = [
   {
@@ -74,14 +75,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center shadow-md">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
+              <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-md overflow-hidden">
+                <EcewsLogo className="w-8 h-8" showWordmark={false} />
               </div>
               <div className="leading-tight">
                 <span className="text-lg font-black text-white tracking-tight">ECEWS</span>
-                <p className="text-[10px] text-emerald-300 font-bold leading-tight">Logistics Consumable Management System</p>
+                <p className="text-[10px] text-emerald-300 font-bold leading-tight">Consumables &amp; Logistics Management System</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -124,7 +123,7 @@ export default function HomePage() {
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-emerald-800 leading-relaxed max-w-2xl mx-auto">
               A complete laboratory consumables management system. Track inventory, manage requests, 
-              monitor stock levels, and generate reports — all in one place.
+              monitor stock levels, and generate reports all in one place.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
@@ -195,7 +194,7 @@ export default function HomePage() {
             Ready to streamline your lab operations?
           </h2>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            Join laboratories already using ECEWS Logistics Consumable Management System to manage their consumables inventory efficiently.
+            Join laboratories already using ECEWS Consumables &amp; Logistics Management System to manage their consumables inventory efficiently.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
@@ -219,10 +218,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center">
-                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
+              <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                <EcewsLogo className="w-6 h-6" showWordmark={false} />
               </div>
               <span className="text-sm font-black text-white">ECEWS</span>
               <p className="text-xs text-emerald-300 font-bold">Consumables & Logistics Management System</p>
