@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../utils/api';
 import HistoryPanel from '../components/HistoryPanel';
 import ExportButton from '../components/ExportButton';
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function Procurement() {
   const qc = useQueryClient();
@@ -123,18 +124,12 @@ export default function Procurement() {
                 <div key={index} className="grid grid-cols-12 gap-2 items-start p-3 bg-gray-50 dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-600">
                   <div className="col-span-5">
                     <label className="text-xs text-gray-500 dark:text-gray-400">Consumable</label>
-                    <select
+                    <SearchableSelect
+                      options={consumables.map(c => ({ value: c._id || c.id, label: `${c.name} (Stock: ${c.stock ?? 0})` }))}
                       value={item.consumableId}
-                      onChange={e => updateItem(index, 'consumableId', e.target.value)}
-                      className="input w-full text-sm dark:bg-gray-700 dark:text-white dark:border-gray-500"
-                    >
-                      <option value="">Select...</option>
-                      {consumables.map(c => (
-                        <option key={c._id || c.id} value={c._id || c.id}>
-                          {c.name} (Stock: {c.stock ?? 0})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={v => updateItem(index, 'consumableId', v)}
+                      placeholder="Search & select..."
+                    />
                   </div>
                   <div className="col-span-3">
                     <label className="text-xs text-gray-500 dark:text-gray-400">Qty</label>

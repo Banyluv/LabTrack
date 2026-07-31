@@ -33,7 +33,10 @@ from app.routers import (
 app = FastAPI()
 
 frontend_url = os.environ.get("FRONTEND_URL")
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
 allow_origins = [frontend_url] if frontend_url else ["http://localhost:3000", "http://localhost:3001"]
+if allowed_origins_env:
+    allow_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,

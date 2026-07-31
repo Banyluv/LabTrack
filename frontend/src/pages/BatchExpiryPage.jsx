@@ -15,7 +15,7 @@ export default function BatchExpiryPage() {
 
   const { data: items = [] } = useQuery({
     queryKey: ['consumables-all'],
-    queryFn: () => api.get('/consumables').then(r => r.data),
+    queryFn: () => api.get('/consumables', { params: { all: 'true' } }).then(r => r.data),
   });
 
   // Build batch records from receive logs that have batch_no or expiry_date

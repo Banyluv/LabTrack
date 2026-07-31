@@ -6,6 +6,8 @@ import api from '../utils/api';
 import Modal from '../components/Modal';
 import HistoryPanel from '../components/HistoryPanel';
 import ExportButton from '../components/ExportButton';
+import FieldLabel from '../components/FieldLabel';
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function DispatchPage() {
   const qc = useQueryClient();
@@ -13,7 +15,7 @@ export default function DispatchPage() {
   const [form, setForm] = useState({ consumable_id: '', quantity: '', issued_quantity: '', returned_quantity: '', receiving_officer: '', destination: '', dispatched_by: '', notes: '' });
   const [filters, setFilters] = useState({ from: '', to: '', destination: '' });
 
-  const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables').then(r => r.data) });
+  const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables', { params: { all: 'true' } }).then(r => r.data) });
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['dispatch-logs', filters],
     queryFn: () => api.get('/dispatch', { params: filters }).then(r => r.data),
@@ -83,23 +85,26 @@ export default function DispatchPage() {
       <Modal open={modal} onClose={() => setModal(false)} title="New Dispatch to Hospital"
         footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Cancel</button><button className="btn btn-danger" onClick={handleSubmit}>Confirm Dispatch</button></>}>
         <div className="space-y-4">
-          <div><label className="label">Consumable *</label>
-            <select className="input" value={form.consumable_id} onChange={f('consumable_id')}>
-              <option value="">Select consumable...</option>
-              {items.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock})</option>)}
-            </select>
+          <div>
+            <FieldLabel label="Consumable" tip="Select the item being dispatched. Current stock levels are shown for reference." required />
+            <SearchableSelect
+              options={items.map(i => ({ value: i.id, label: `${i.name} (Stock: ${i.stock})` }))}
+              value={form.consumable_id}
+              onChange={v => setForm(p => ({ ...p, consumable_id: v }))}
+              placeholder="Search & select consumable..."
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Quantity *</label><input className="input" type="number" min="1" value={form.quantity} onChange={f('quantity')} /></div>
-            <div><label className="label">Destination *</label><input className="input" placeholder="Ward / Dept" value={form.destination} onChange={f('destination')} /></div>
+            <div><FieldLabel label="Quantity" tip="Number of units being dispatched. Must be a positive number and cannot exceed available stock." required /><input className="input" type="number" min="1" value={form.quantity} onChange={f('quantity')} /></div>
+            <div><FieldLabel label="Destination" tip="The ward, department, facility, or location this stock is being sent to." required /><input className="input" placeholder="Ward / Dept" value={form.destination} onChange={f('destination')} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Issued Quantity</label><input className="input" type="number" min="0" value={form.issued_quantity} onChange={f('issued_quantity')} /></div>
-            <div><label className="label">Returned Quantity</label><input className="input" type="number" min="0" value={form.returned_quantity} onChange={f('returned_quantity')} /></div>
+            <div><FieldLabel label="Issued Quantity" tip="The quantity actually handed over to the recipient. May differ from the dispatch quantity if there were shortages." /><input className="input" type="number" min="0" value={form.issued_quantity} onChange={f('issued_quantity')} /></div>
+            <div><FieldLabel label="Returned Quantity" tip="Any unused stock returned from a previous dispatch or distribution." /><input className="input" type="number" min="0" value={form.returned_quantity} onChange={f('returned_quantity')} /></div>
           </div>
-          <div><label className="label">Receiving Officer</label><input className="input" placeholder="Name of receiving officer" value={form.receiving_officer} onChange={f('receiving_officer')} /></div>
-          <div><label className="label">Dispatched By *</label><input className="input" placeholder="Staff name" value={form.dispatched_by} onChange={f('dispatched_by')} /></div>
-          <div><label className="label">Notes</label><input className="input" placeholder="Optional" value={form.notes} onChange={f('notes')} /></div>
+          <div><FieldLabel label="Receiving Officer" tip="The person who will receive the stock at the destination location." /><input className="input" placeholder="Name of receiving officer" value={form.receiving_officer} onChange={f('receiving_officer')} /></div>
+          <div><FieldLabel label="Dispatched By" tip="The staff member responsible for releasing the stock from the store." required /><input className="input" placeholder="Staff name" value={form.dispatched_by} onChange={f('dispatched_by')} /></div>
+          <div><FieldLabel label="Notes" tip="Optional comments about this dispatch — condition of goods, delays, special instructions, etc." /><input className="input" placeholder="Optional" value={form.notes} onChange={f('notes')} /></div>
         </div>
       </Modal>
     </div>

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import api from '../utils/api';
 import Modal from '../components/Modal';
 import HistoryPanel from '../components/HistoryPanel';
+import SearchableSelect from '../components/SearchableSelect';
 
 const adjustmentTypes = [
   { value: 'loss', label: 'Loss', color: 'text-red-500' },
@@ -20,7 +21,10 @@ export default function StockAdjustmentPage() {
   const [form, setForm] = useState({ consumable_id: '', quantity: '', adjustment_type: 'loss', reason: '' });
   const [filters, setFilters] = useState({ from: '', to: '', type: '' });
 
-  const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables').then(r => r.data) });
+  const { data: items = [] } = useQuery({
+    queryKey: ['consumables-all'],
+    queryFn: () => api.get('/consumables', { params: { all: 'true' } }).then(r => r.data),
+  });
   const { data: adjustments = [], isLoading } = useQuery({
     queryKey: ['stock-adjustments', filters],
     queryFn: () => api.get('/stock-adjustments', { params: filters }).then(r => r.data),
@@ -100,10 +104,12 @@ export default function StockAdjustmentPage() {
         footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Cancel</button><button className="btn btn-primary" onClick={handleSubmit}>Confirm Adjustment</button></>}>
         <div className="space-y-4">
           <div><label className="label">Consumable *</label>
-            <select className="input" value={form.consumable_id} onChange={f('consumable_id')}>
-              <option value="">Select consumable...</option>
-              {items.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock})</option>)}
-            </select>
+            <SearchableSelect
+              options={items.map(i => ({ value: i.id, label: `${i.name} (Stock: ${i.stock})` }))}
+              value={form.consumable_id}
+              onChange={v => setForm(p => ({ ...p, consumable_id: v }))}
+              placeholder="Search & select consumable..."
+            />
           </div>
           <div><label className="label">Adjustment Type *</label>
             <select className="input" value={form.adjustment_type} onChange={f('adjustment_type')}>

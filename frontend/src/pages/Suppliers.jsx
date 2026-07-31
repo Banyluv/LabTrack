@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../utils/api';
+import FieldLabel from '../components/FieldLabel';
 import toast from 'react-hot-toast';
 
 export default function Suppliers() {
@@ -65,9 +66,9 @@ export default function Suppliers() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-4">{editId ? 'Edit' : 'Add'} Supplier</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div><label className="label">Name *</label><input className="input" value={form.name} onChange={f('name')} /></div>
-              <div className="grid grid-cols-2 gap-3"><div><label className="label">Contact Person</label><input className="input" value={form.contact_person} onChange={f('contact_person')} /></div><div><label className="label">Email</label><input className="input" type="email" value={form.email} onChange={f('email')} /></div></div>
-              <div className="grid grid-cols-2 gap-3"><div><label className="label">Phone</label><input className="input" value={form.phone} onChange={f('phone')} /></div><div><label className="label">Address</label><input className="input" value={form.address} onChange={f('address')} /></div></div>
+              <div><FieldLabel label="Name" tip="The name of the vendor or supplying organisation." required /><input className="input" value={form.name} onChange={f('name')} /></div>
+              <div className="grid grid-cols-2 gap-3"><div><FieldLabel label="Contact Person" tip="Phone number, email, or primary contact person at the supplier." /><input className="input" value={form.contact_person} onChange={f('contact_person')} /></div><div><FieldLabel label="Email" tip="The primary email address for contacting this supplier." /><input className="input" type="email" value={form.email} onChange={f('email')} /></div></div>
+              <div className="grid grid-cols-2 gap-3"><div><FieldLabel label="Phone" tip="Contact phone number for the supplier." /><input className="input" value={form.phone} onChange={f('phone')} /></div><div><FieldLabel label="Address" tip="Physical or postal address of the supplier." /><input className="input" value={form.address} onChange={f('address')} /></div></div>
               <div className="flex gap-2 pt-2"><button type="submit" className="btn btn-primary flex-1">Save</button><button type="button" className="btn btn-secondary flex-1" onClick={() => setModal(null)}>Cancel</button></div>
             </form>
           </div>

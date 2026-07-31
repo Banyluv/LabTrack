@@ -1,5 +1,27 @@
-To start the backend server, cd to backend using
-cd backend and then activate your environment 
-Then run python run.python
-To start the frontnd server, cd to frontend using cd frontend
-Then run node node_modules\vite\bin\vite.js --host
+# Important: Always start from the project root folder
+cd "C:\ECEWS Consumables & logistics Management System"
+
+# Backend
+1. `cd backend`
+2. Activate your virtual environment: `.\venv\Scripts\activate`
+3. Run the server: `python run.py`
+
+# Frontend
+
+**Option 1 — Startup script (recommended):**
+Run this from **anywhere** in PowerShell:
+```
+C:\ECEWS\ Consumables\ &\ logistics\ Management\ System\_start_frontend.ps1
+```
+
+**Option 2 — Direct node call (works reliably with & in path):**
+```powershell
+node "C:\ECEWS Consumables & logistics Management System\frontend\node_modules\vite\bin\vite.js" --host --port 300
+```
+
+**Option 3 — Using npm (may fail in PowerShell due to & in path):**
+```powershell
+Set-Location -LiteralPath 'C:\ECEWS Consumables & logistics Management System\frontend'
+npm install   # first time only
+npm run dev
+```

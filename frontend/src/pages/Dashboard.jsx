@@ -55,7 +55,6 @@ export default function Dashboard() {
               </p>
               <p className="text-sm text-slate-400">Role: <span className="text-slate-100 font-semibold">{userRole}</span></p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2"></div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-[1.75rem] border border-slate-800 bg-slate-900/95 p-5 shadow-xl shadow-slate-950/20">

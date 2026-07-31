@@ -4,6 +4,8 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import DeliveryNote from '../components/DeliveryNote';
 import HistoryPanel from '../components/HistoryPanel';
+import FieldLabel from '../components/FieldLabel';
+import SearchableSelect from '../components/SearchableSelect';
 
 const getStockStatus = (stock, min_stock, safety_stock, emergency_order_point) => {
   if (stock === 0) return { label: 'Out of Stock', className: 'badge badge-out text-xs' };
@@ -285,25 +287,18 @@ export default function ManageRequests() {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">New Request</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="label dark:text-gray-300">Select Consumable</label>
-                  <select
-                    className="input dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                  <FieldLabel label="Select Consumable" tip="Choose a consumable item from the list. Stock levels, categories and units are shown for each item." required />
+                  <SearchableSelect
+                    options={consumables.map(c => ({ value: c.id, label: `${c.name} (${c.unit}) - Stock: ${c.stock} | ${c.category_name || 'N/A'}` }))}
                     value={selectedConsumable}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      const item = consumables.find(c => c.id.toString() === id);
+                    onChange={(v) => {
+                      const item = consumables.find(c => c.id.toString() === String(v));
                       if (item) handleSelect(item);
                       else { setSelectedConsumable(''); setSelectedItem(null); }
                     }}
+                    placeholder="-- Search & choose a consumable --"
                     disabled={loadingConsumables}
-                  >
-                    <option value="">-- Choose a consumable --</option>
-                    {consumables.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.unit}) - Stock: {c.stock} | {c.category_name || 'N/A'}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 {selectedItem && (
@@ -373,15 +368,15 @@ export default function ManageRequests() {
                 )}
 
                 <div>
-                  <label className="label dark:text-gray-300">Quantity *</label>
+                  <FieldLabel label="Quantity" tip="The number of units you need. Must be a positive number." required />
                   <input type="number" className="input dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Enter quantity" min="1" required />
                 </div>
                 <div>
-                  <label className="label dark:text-gray-300">Requesting Officer (Optional)</label>
+                  <FieldLabel label="Requesting Officer" tip="The name or title of the person making this request for record purposes." />
                   <input type="text" className="input dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" value={requestingOfficer} onChange={(e) => setRequestingOfficer(e.target.value)} placeholder="Name of requesting officer" />
                 </div>
                 <div>
-                  <label className="label dark:text-gray-300">Notes (Optional)</label>
+                  <FieldLabel label="Notes" tip="Optional details about why this request is needed, urgency, or any special instructions." />
                   <textarea className="input resize-none dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" rows="3" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add any notes..." />
                 </div>
                 <button type="submit" disabled={submitting || (balance && !balance.allowed)} className={`btn btn-primary w-full ${(balance && !balance.allowed) ? 'opacity-50 cursor-not-allowed' : ''}`}>

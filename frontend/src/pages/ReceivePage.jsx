@@ -6,6 +6,8 @@ import api from '../utils/api';
 import Modal from '../components/Modal';
 import HistoryPanel from '../components/HistoryPanel';
 import ExportButton from '../components/ExportButton';
+import FieldLabel from '../components/FieldLabel';
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function ReceivePage() {
   const qc = useQueryClient();
@@ -13,7 +15,7 @@ export default function ReceivePage() {
   const [form, setForm] = useState({ consumable_id: '', quantity: '', supplier: '', received_by: '', invoice_ref: '', batch_no: '', expiry_date: '', grn: '', ordered_by: '', approved_by: '', damaged_quantity: '', returned_quantity: '' });
   const [filters, setFilters] = useState({ from: '', to: '' });
 
-  const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables').then(r => r.data) });
+  const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables', { params: { all: 'true' } }).then(r => r.data) });
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['receive-logs', filters],
     queryFn: () => api.get('/receive', { params: filters }).then(r => r.data),
@@ -84,31 +86,34 @@ export default function ReceivePage() {
       <Modal open={modal} onClose={() => setModal(false)} title="Receive Stock from Store"
         footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Cancel</button><button className="btn btn-primary" onClick={handleSubmit}>Confirm Receipt</button></>}>
         <div className="space-y-4">
-          <div><label className="label">Consumable *</label>
-            <select className="input" value={form.consumable_id} onChange={f('consumable_id')}>
-              <option value="">Select consumable...</option>
-              {items.map(i => <option key={i.id} value={i.id}>{i.name} (Current: {i.stock})</option>)}
-            </select>
+          <div>
+            <FieldLabel label="Consumable" tip="Select the item you are receiving into stock. Current stock levels are shown for reference." required />
+            <SearchableSelect
+              options={items.map(i => ({ value: i.id, label: `${i.name} (Current: ${i.stock})` }))}
+              value={form.consumable_id}
+              onChange={v => setForm(p => ({ ...p, consumable_id: v }))}
+              placeholder="Search & select consumable..."
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Quantity *</label><input className="input" type="number" min="1" value={form.quantity} onChange={f('quantity')} /></div>
-            <div><label className="label">Supplier</label><input className="input" placeholder="Supplier name" value={form.supplier} onChange={f('supplier')} /></div>
+            <div><FieldLabel label="Quantity" tip="Number of units being received. Must be a positive number." required /><input className="input" type="number" min="1" value={form.quantity} onChange={f('quantity')} /></div>
+            <div><FieldLabel label="Supplier" tip="The vendor, manufacturer, or organisation that supplied the items." /><input className="input" placeholder="Supplier name" value={form.supplier} onChange={f('supplier')} /></div>
           </div>
-          <div><label className="label">Received By *</label><input className="input" placeholder="Staff name" value={form.received_by} onChange={f('received_by')} /></div>
+          <div><FieldLabel label="Received By" tip="The staff member who received and checked the goods against the delivery note." required /><input className="input" placeholder="Staff name" value={form.received_by} onChange={f('received_by')} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Batch No.</label><input className="input" placeholder="BATCH-001" value={form.batch_no} onChange={f('batch_no')} /></div>
-            <div><label className="label">Expiry Date</label><input className="input" type="date" value={form.expiry_date} onChange={f('expiry_date')} /></div>
+            <div><FieldLabel label="Batch No." tip="The manufacturer or supplier batch/lot number for traceability." /><input className="input" placeholder="BATCH-001" value={form.batch_no} onChange={f('batch_no')} /></div>
+            <div><FieldLabel label="Expiry Date" tip="The date after which this consumable should not be used. Helps manage stock rotation." /><input className="input" type="date" value={form.expiry_date} onChange={f('expiry_date')} /></div>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <div><label className="label">GRN</label><input className="input" placeholder="GRN-0001" value={form.grn} onChange={f('grn')} /></div>
-            <div><label className="label">Ordered By</label><input className="input" placeholder="Officer name" value={form.ordered_by} onChange={f('ordered_by')} /></div>
-            <div><label className="label">Approved By</label><input className="input" placeholder="Approver name" value={form.approved_by} onChange={f('approved_by')} /></div>
+            <div><FieldLabel label="GRN" tip="Goods Received Note number — a document that confirms receipt of goods for auditing." /><input className="input" placeholder="GRN-0001" value={form.grn} onChange={f('grn')} /></div>
+            <div><FieldLabel label="Ordered By" tip="The person who placed the original order with the supplier." /><input className="input" placeholder="Officer name" value={form.ordered_by} onChange={f('ordered_by')} /></div>
+            <div><FieldLabel label="Approved By" tip="The person who authorised the procurement or receipt of these goods." /><input className="input" placeholder="Approver name" value={form.approved_by} onChange={f('approved_by')} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Damaged Quantity</label><input className="input" type="number" min="0" value={form.damaged_quantity} onChange={f('damaged_quantity')} /></div>
-            <div><label className="label">Returned Quantity</label><input className="input" type="number" min="0" value={form.returned_quantity} onChange={f('returned_quantity')} /></div>
+            <div><FieldLabel label="Damaged Quantity" tip="Quantity found damaged, expired, or unusable upon receipt. These are recorded but not added to usable stock." /><input className="input" type="number" min="0" value={form.damaged_quantity} onChange={f('damaged_quantity')} /></div>
+            <div><FieldLabel label="Returned Quantity" tip="Quantity returned to the supplier instead of being accepted." /><input className="input" type="number" min="0" value={form.returned_quantity} onChange={f('returned_quantity')} /></div>
           </div>
-          <div><label className="label">Invoice / Reference No.</label><input className="input" placeholder="INV-0000" value={form.invoice_ref} onChange={f('invoice_ref')} /></div>
+          <div><FieldLabel label="Invoice / Reference No." tip="Invoice, waybill, or delivery note number for auditing and record-keeping." /><input className="input" placeholder="INV-0000" value={form.invoice_ref} onChange={f('invoice_ref')} /></div>
         </div>
       </Modal>
     </div>

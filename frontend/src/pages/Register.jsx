@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import PasswordInput from '../components/PasswordInput';
+import FieldLabel from '../components/FieldLabel';
 import toast from 'react-hot-toast';
 
 const NigerianLGAs = {
@@ -126,7 +127,7 @@ export default function Register() {
                <p className="text-xs text-white/70 mb-3">Facility Information</p>
               <div className="space-y-4">
                 <div>
-                  <label className="label">Facility Name *</label>
+                  <FieldLabel label="Facility Name" tip="Your facility, ward, or department name for contextual access." required />
                   <select className="input" value={facilityName} onChange={e => setFacilityName(e.target.value)} required>
                     <option value="">Select Facility...</option>
                     {facilities.map(f => (
@@ -135,14 +136,14 @@ export default function Register() {
                   </select>
                 </div>
                 <div>
-                  <label className="label">State *</label>
+                  <FieldLabel label="State" tip="The state where your facility is located in Nigeria." required />
                   <select className="input" value={state} onChange={e => { setState(e.target.value); setLga(''); }} required>
                     <option value="">Select State...</option>
                     {NigerianStates.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="label">LGA *</label>
+                  <FieldLabel label="LGA" tip="Local Government Area — the administrative district within your state." required />
                   <select className="input" value={lga} onChange={e => setLga(e.target.value)} required disabled={!state}>
                     <option value="">{state ? 'Select LGA...' : 'Select a state first'}</option>
                     {lgas.map(l => <option key={l} value={l}>{l}</option>)}
@@ -151,15 +152,15 @@ export default function Register() {
               </div>
             </div>
             <div>
-              <label className="label">Username</label>
+              <FieldLabel label="Username" tip="Choose a unique username for signing in to the system." required />
               <input type="text" className="input" value={username} onChange={e => setUsername(e.target.value)} required placeholder="Choose a username" />
             </div>
             <div>
-              <label className="label">Password</label>
+              <FieldLabel label="Password" tip="Must be at least 8 characters with a mix of letters, numbers, and symbols." required />
               <PasswordInput className="input" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
             <div>
-              <label className="label">Confirm Password</label>
+              <FieldLabel label="Confirm Password" tip="Re-enter your password to confirm it was typed correctly." required />
               <PasswordInput className="input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
             </div>
             <button type="submit" disabled={loading} className="btn btn-primary w-full justify-center py-2.5">

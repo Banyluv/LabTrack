@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PasswordInput from '../components/PasswordInput';
+import FieldLabel from '../components/FieldLabel';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -82,7 +83,7 @@ export default function Login() {
                   )}
 
                   <div>
-                    <label className="label">Username</label>
+                    <FieldLabel label="Username" tip="Your account username provided by the system administrator." />
                     <input
                       type="text"
                       className="input"
@@ -94,7 +95,7 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="label">Password</label>
+                    <FieldLabel label="Password" tip="Must be at least 8 characters with a mix of letters, numbers, and symbols." />
                     <PasswordInput
                       className="input"
                       value={password}

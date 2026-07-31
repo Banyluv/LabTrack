@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import api from '../utils/api';
 import Modal from '../components/Modal';
 import HistoryPanel from '../components/HistoryPanel';
+import FieldLabel from '../components/FieldLabel';
+import SearchableSelect from '../components/SearchableSelect';
 
 const COLUMNS = ['Date', 'Consumable', 'Category', 'Qty Used', 'Unit', 'Batch No', 'Expiry', 'Used By', 'Notes', ''];
 
@@ -40,7 +42,7 @@ export default function DailyUsagePage() {
   const [form, setForm] = useState({ consumable_id: '', quantity: '', used_by: '', usage_date: new Date().toISOString().slice(0, 10), notes: '', batch_no: '', expiry_date: '' });
   const [filters, setFilters] = useState({ from: '', to: '', consumable_id: '', used_by: '' });
 
-  const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables').then(r => r.data) });
+  const { data: items = [] } = useQuery({ queryKey: ['consumables-all'], queryFn: () => api.get('/consumables', { params: { all: 'true' } }).then(r => r.data) });
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['daily-usage-logs', filters],
     queryFn: () => {
@@ -202,10 +204,13 @@ export default function DailyUsagePage() {
           </div>
           <div className="flex-1 min-w-[180px]">
             <label className="label">Consumable</label>
-            <select className="input" value={filters.consumable_id} onChange={e => setFilters(p => ({ ...p, consumable_id: e.target.value }))}>
-              <option value="">All consumables</option>
-              {items.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={items.map(i => ({ value: i.id, label: i.name }))}
+              value={filters.consumable_id}
+              onChange={v => setFilters(p => ({ ...p, consumable_id: v }))}
+              placeholder="All consumables"
+              clearable
+            />
           </div>
           <div className="w-48">
             <label className="label">Used By</label>
@@ -295,39 +300,41 @@ export default function DailyUsagePage() {
         footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Cancel</button><button className="btn btn-primary" onClick={handleSubmit} disabled={usageMut.isLoading}>{usageMut.isLoading ? 'Logging...' : 'Log Usage'}</button></>}>
         <div className="space-y-4">
           <div>
-            <label className="label">Consumable *</label>
-            <select className="input" value={form.consumable_id} onChange={f('consumable_id')}>
-              <option value="">Select consumable...</option>
-              {items.map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.stock} {i.unit})</option>)}
-            </select>
+            <FieldLabel label="Consumable" tip="Select the consumable item that was used. Current stock levels are shown for reference." required />
+            <SearchableSelect
+              options={items.map(i => ({ value: i.id, label: `${i.name} (Stock: ${i.stock} ${i.unit})` }))}
+              value={form.consumable_id}
+              onChange={v => setForm(p => ({ ...p, consumable_id: v }))}
+              placeholder="Search & select consumable..."
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Quantity Used *</label>
+              <FieldLabel label="Quantity Used" tip="Number of units consumed. Cannot exceed the available stock level." required />
               <input className="input" type="number" min="1" max={selectedItem?.stock || undefined} placeholder="e.g. 2" value={form.quantity} onChange={f('quantity')} />
               {selectedItem && <p className="mt-1 text-xs text-gray-400">{selectedItem.stock} {selectedItem.unit} available</p>}
             </div>
             <div>
-              <label className="label">Date</label>
+              <FieldLabel label="Date" tip="The date the consumable was actually used (not the date it was logged)." />
               <input className="input" type="date" value={form.usage_date} onChange={f('usage_date')} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Batch No.</label>
+              <FieldLabel label="Batch No." tip="The manufacturer batch or lot number for traceability of the consumed items." />
               <input className="input" placeholder="Batch number (if any)" value={form.batch_no} onChange={f('batch_no')} />
             </div>
             <div>
-              <label className="label">Expiry Date</label>
+              <FieldLabel label="Expiry Date" tip="The expiry date of the specific batch being consumed. Helps track shelf-life compliance." />
               <input className="input" type="date" value={form.expiry_date} onChange={f('expiry_date')} />
             </div>
           </div>
           <div>
-            <label className="label">Used By (Staff Name) *</label>
+            <FieldLabel label="Used By (Staff Name)" tip="The staff member who actually used or administered the consumable." required />
             <input className="input" placeholder="e.g. Nurse Jane" value={form.used_by} onChange={f('used_by')} />
           </div>
           <div>
-            <label className="label">Notes</label>
+            <FieldLabel label="Notes" tip="Optional comments about the usage — patient ID, purpose, or any observations." />
             <textarea className="input" rows={2} placeholder="Optional notes..." value={form.notes} onChange={f('notes')} />
           </div>
         </div>

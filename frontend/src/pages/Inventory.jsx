@@ -7,6 +7,7 @@ import HistoryPanel from '../components/HistoryPanel';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import ImportModal from '../components/ImportModal';
+import FieldLabel from '../components/FieldLabel';
 
 const statusBadge = (item) => {
   const stock = item.stock || 0;
@@ -284,7 +285,7 @@ export default function Inventory() {
           {/* Name: searchable dropdown for add, plain text input for edit */}
           {modal === 'add' ? (
             <div ref={dropdownWrapperRef}>
-              <label className="label">Consumable *</label>
+              <FieldLabel label="Consumable" tip="Search and select a consumable item, or add a brand new one. Stock levels and categories are shown for reference." required />
               <div className="relative">
                 <button
                   type="button"
@@ -373,13 +374,15 @@ export default function Inventory() {
             <div><label className="label">Name *</label><input className="input" value={form.name} onChange={f('name')} /></div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Category *</label>
+            <div>
+              <FieldLabel label="Category" tip="Group related consumables together for easier reporting and filtering. Type to search or select from the list." required />
               <input className="input" list="category-list" value={form.category_id} onChange={f('category_id')} placeholder="Type or select..." />
               <datalist id="category-list">
                 {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </datalist>
             </div>
-            <div><label className="label">Unit of Issue *</label>
+            <div>
+              <FieldLabel label="Unit of Issue" tip="The measurement unit each consumable is tracked in — e.g. pcs, boxes, litres, packs." required />
               <input className="input" list="unit-list" value={form.unit} onChange={f('unit')} placeholder="Type or select..." />
               <datalist id="unit-list">
                 {units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
@@ -407,7 +410,7 @@ export default function Inventory() {
                   </p>
                 )}
                 <div>
-                  <label className="label">Quantity to Add *</label>
+                  <FieldLabel label="Quantity to Add" tip="Number of units to add to stock. This is added to existing stock levels." required />
                   <input
                     className="input text-lg font-bold"
                     type="number"
@@ -420,45 +423,46 @@ export default function Inventory() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="label">SKU / Item Code</label><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
-                <div><label className="label">Unit of Issue</label><div className="input bg-gray-100 text-gray-700">{form.unit || '—'}</div></div>
+                <div><FieldLabel label="SKU / Item Code" tip="Stock Keeping Unit — a unique identifier used internally for inventory tracking." /><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
+                <div><FieldLabel label="Unit of Issue" tip="The measurement unit each consumable is tracked in — e.g. pcs, boxes, litres." /><div className="input bg-gray-100 text-gray-700">{form.unit || '—'}</div></div>
               </div>
             </>
           )}
           {modal === 'edit' && (
-            <div><label className="label">SKU / Item Code</label><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
+            <div><FieldLabel label="SKU / Item Code" tip="Stock Keeping Unit — a unique identifier used internally for inventory tracking." /><input className="input" placeholder="SKU-001" value={form.sku} onChange={f('sku')} /></div>
           )}
-          <div><label className="label">Description</label><input className="input" value={form.description} onChange={f('description')} /></div>
+          <div><FieldLabel label="Description" tip="A brief description of the consumable, its use, or any special handling instructions." /><input className="input" value={form.description} onChange={f('description')} /></div>
           <fieldset className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 space-y-3">
             <legend className="text-xs font-semibold text-gray-600 dark:text-gray-300 px-2">Inventory Levels</legend>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="label">Minimum Stock Level <span className="text-xs text-gray-400">(2-month stock)</span></label><input className="input" type="number" min="0" value={form.min_stock} onChange={f('min_stock')} /></div>
-              <div><label className="label">Maximum Stock Level <span className="text-xs text-gray-400">(4-month stock)</span></label><input className="input" type="number" min="0" value={form.max_stock} onChange={f('max_stock')} /></div>
+              <div><FieldLabel label="Minimum Stock Level" tip="The minimum quantity you want to keep in stock. Triggers a low stock alert when stock falls below this level." /><span className="text-xs text-gray-400 ml-1">(2-month stock)</span><input className="input" type="number" min="0" value={form.min_stock} onChange={f('min_stock')} /></div>
+              <div><FieldLabel label="Maximum Stock Level" tip="The maximum quantity you want to hold. Ordering beyond this may indicate overstocking." /><span className="text-xs text-gray-400 ml-1">(4-month stock)</span><input className="input" type="number" min="0" value={form.max_stock} onChange={f('max_stock')} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="label">Safety Stock <span className="text-xs text-gray-400">(1-month stock)</span></label><input className="input" type="number" min="0" value={form.safety_stock} onChange={f('safety_stock')} /></div>
-              <div><label className="label">Emergency Order Point <span className="text-xs text-gray-400">(2-week stock)</span></label><input className="input" type="number" min="0" value={form.emergency_order_point} onChange={f('emergency_order_point')} /></div>
+              <div><FieldLabel label="Safety Stock" tip="An extra buffer above min stock to prevent stockouts during unexpected demand or supply delays." /><span className="text-xs text-gray-400 ml-1">(1-month stock)</span><input className="input" type="number" min="0" value={form.safety_stock} onChange={f('safety_stock')} /></div>
+              <div><FieldLabel label="Emergency Order Point" tip="A critical threshold below which an urgent reorder is needed to avoid a stockout." /><span className="text-xs text-gray-400 ml-1">(2-week stock)</span><input className="input" type="number" min="0" value={form.emergency_order_point} onChange={f('emergency_order_point')} /></div>
             </div>
           </fieldset>
           <fieldset className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 space-y-3">
             <legend className="text-xs font-semibold text-gray-600 dark:text-gray-300 px-2">Reorder & Consumption</legend>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="label flex items-center gap-1">Reorder Level <span className="text-xs text-gray-400">(must be {'<'} stock)</span></label>
+                <FieldLabel label="Reorder Level" tip="The recommended quantity to order when restocking. Must be less than current stock." />
+                <span className="text-xs text-gray-400">(must be {'<'} stock)</span>
                 <input className={`input ${formError ? 'border-red-500' : ''}`} type="number" min="0" value={form.reorder_quantity} onChange={(e) => { setFormError(''); f('reorder_quantity')(e); }} />
               </div>
-              <div><label className="label">Monthly Consumption</label><input className="input" type="number" min="0" step="0.01" value={form.monthly_consumption} onChange={f('monthly_consumption')} /></div>
-              <div><label className="label">Average Consumption</label><input className="input" type="number" min="0" step="0.01" value={form.avg_consumption} onChange={f('avg_consumption')} /></div>
+              <div><FieldLabel label="Monthly Consumption" tip="Average quantity used per month. Used to forecast future stock needs." /><input className="input" type="number" min="0" step="0.01" value={form.monthly_consumption} onChange={f('monthly_consumption')} /></div>
+              <div><FieldLabel label="Average Consumption" tip="Long-term average consumption rate, smoothed across multiple months for more accurate forecasting." /><input className="input" type="number" min="0" step="0.01" value={form.avg_consumption} onChange={f('avg_consumption')} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="label">Daily Usage Rate</label><input className="input" type="number" min="0" step="0.01" value={form.daily_usage} onChange={f('daily_usage')} /></div>
-              <div><label className="label">MOS (Months of Supply)</label><input className="input" type="number" min="0" step="0.01" value={form.mos} onChange={f('mos')} /></div>
+              <div><FieldLabel label="Daily Usage Rate" tip="The average quantity used per day. Used to estimate days of supply remaining." /><input className="input" type="number" min="0" step="0.01" value={form.daily_usage} onChange={f('daily_usage')} /></div>
+              <div><FieldLabel label="MOS (Months of Supply)" tip="Months of Supply — how many months the current stock will last at the current consumption rate." /><input className="input" type="number" min="0" step="0.01" value={form.mos} onChange={f('mos')} /></div>
             </div>
             {formError && <p className="text-red-600 text-xs mt-1">{formError}</p>}
           </fieldset>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Batch No.</label><input className="input" placeholder="BATCH-001" value={form.batch_no} onChange={f('batch_no')} /></div>
-            <div><label className="label">Expiry Date</label><input className="input" type="date" value={form.expiry_date} onChange={f('expiry_date')} /></div>
+            <div><FieldLabel label="Batch No." tip="The manufacturer or supplier batch/lot number for traceability purposes." /><input className="input" placeholder="BATCH-001" value={form.batch_no} onChange={f('batch_no')} /></div>
+            <div><FieldLabel label="Expiry Date" tip="The date after which this consumable should not be used. Helps manage stock rotation and compliance." /><input className="input" type="date" value={form.expiry_date} onChange={f('expiry_date')} /></div>
           </div>
         </div>
       </Modal>
@@ -469,16 +473,16 @@ export default function Inventory() {
         {selectedItem && <div className="space-y-4">
           <div className="p-3 bg-gray-50 rounded-lg text-sm"><span className="font-medium">{selectedItem.name}</span> — <span className="text-gray-500">Available: <strong>{selectedItem.stock}</strong> {selectedItem.unit}</span></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Quantity *</label><input className="input" type="number" min="1" max={selectedItem.stock} value={txForm.quantity} onChange={tf('quantity')} /></div>
-            <div><label className="label">Facility *</label>
+            <div><FieldLabel label="Quantity" tip="Number of units to dispatch. Cannot exceed the available stock." required /><input className="input" type="number" min="1" max={selectedItem.stock} value={txForm.quantity} onChange={tf('quantity')} /></div>
+            <div><FieldLabel label="Facility" tip="The destination facility, ward, or department receiving the stock." required />
               <select className="input" value={txForm.destination} onChange={tf('destination')}>
                 <option value="">Select facility...</option>
                 {facilities.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
               </select>
             </div>
           </div>
-          <div><label className="label">Dispatched By *</label><input className="input" placeholder="Staff name" value={txForm.dispatched_by} onChange={tf('dispatched_by')} /></div>
-          <div><label className="label">Notes</label><input className="input" placeholder="Optional remarks" value={txForm.notes} onChange={tf('notes')} /></div>
+          <div><FieldLabel label="Dispatched By" tip="The staff member responsible for releasing the stock from the store." required /><input className="input" placeholder="Staff name" value={txForm.dispatched_by} onChange={tf('dispatched_by')} /></div>
+          <div><FieldLabel label="Notes" tip="Optional remarks about this dispatch — condition, urgency, special instructions." /><input className="input" placeholder="Optional remarks" value={txForm.notes} onChange={tf('notes')} /></div>
         </div>}
       </Modal>
 
@@ -505,15 +509,15 @@ export default function Inventory() {
         {selectedItem && <div className="space-y-4">
           <div className="p-3 bg-gray-50 rounded-lg text-sm"><span className="font-medium">{selectedItem.name}</span> — <span className="text-gray-500">Current stock: <strong>{selectedItem.stock}</strong></span></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Quantity Received *</label><input className="input" type="number" min="1" value={txForm.quantity} onChange={tf('quantity')} /></div>
-            <div><label className="label">Supplier</label><input className="input" placeholder="Supplier name" value={txForm.supplier} onChange={tf('supplier')} /></div>
+            <div><FieldLabel label="Quantity Received" tip="Number of units being received. Must be a positive number." required /><input className="input" type="number" min="1" value={txForm.quantity} onChange={tf('quantity')} /></div>
+            <div><FieldLabel label="Supplier" tip="The vendor, manufacturer, or organisation that supplied the items." /><input className="input" placeholder="Supplier name" value={txForm.supplier} onChange={tf('supplier')} /></div>
           </div>
-          <div><label className="label">Received By *</label><input className="input" placeholder="Staff name" value={txForm.received_by} onChange={tf('received_by')} /></div>
+          <div><FieldLabel label="Received By" tip="The staff member who received and checked the goods." required /><input className="input" placeholder="Staff name" value={txForm.received_by} onChange={tf('received_by')} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Batch No.</label><input className="input" placeholder="BATCH-001" value={txForm.batch_no} onChange={tf('batch_no')} /></div>
-            <div><label className="label">Expiry Date</label><input className="input" type="date" value={txForm.expiry_date} onChange={tf('expiry_date')} /></div>
+            <div><FieldLabel label="Batch No." tip="The manufacturer or supplier batch/lot number for traceability." /><input className="input" placeholder="BATCH-001" value={txForm.batch_no} onChange={tf('batch_no')} /></div>
+            <div><FieldLabel label="Expiry Date" tip="The date after which this consumable should not be used." /><input className="input" type="date" value={txForm.expiry_date} onChange={tf('expiry_date')} /></div>
           </div>
-          <div><label className="label">Invoice / Reference No.</label><input className="input" placeholder="INV-0000" value={txForm.invoice_ref} onChange={tf('invoice_ref')} /></div>
+          <div><FieldLabel label="Invoice / Reference No." tip="Invoice, waybill, or delivery note number for auditing." /><input className="input" placeholder="INV-0000" value={txForm.invoice_ref} onChange={tf('invoice_ref')} /></div>
         </div>}
       </Modal>
 

@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import api from '../utils/api';
 import HistoryPanel from '../components/HistoryPanel';
 import ExportButton from '../components/ExportButton';
+import FieldLabel from '../components/FieldLabel';
+import SearchableSelect from '../components/SearchableSelect';
 
 export default function StockTransfer() {
   const [fromFacility, setFromFacility] = useState('');
@@ -22,12 +24,12 @@ export default function StockTransfer() {
 
   const { data: consumables = [] } = useQuery({
     queryKey: ['consumables-list'],
-    queryFn: () => api.get('/consumables').then(r => r.data),
+    queryFn: () => api.get('/consumables', { params: { all: 'true' } }).then(r => r.data),
   });
 
   const { data: transfers = [], refetch } = useQuery({
     queryKey: ['stock-transfers'],
-    queryFn: () => api.get('/transfers').then(r => r.data),
+    queryFn: () => api.get('/stock-transfers').then(r => r.data),
   });
 
   const handleTransfer = async (e) => {
@@ -42,7 +44,7 @@ export default function StockTransfer() {
     }
     setSubmitting(true);
     try {
-      await api.post('/transfers', {
+      await api.post('/stock-transfers', {
         fromFacilityId: fromFacility,
         toFacilityId: toFacility,
         consumableId,
@@ -62,7 +64,7 @@ export default function StockTransfer() {
     }
   };
 
-  const selectedConsumable = consumables.find(c => c._id === consumableId);
+  const selectedConsumable = consumables.find(c => String(c.id) === String(consumableId));
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -71,19 +73,19 @@ export default function StockTransfer() {
           <h1 className="text-xl font-semibold text-green-800 dark:text-green-300">Stock Transfer</h1>
           <p className="text-sm text-green-700 dark:text-green-200 mt-0.5">Move stock between facilities</p>
         </div>
-        <ExportButton label="Export Transfer History" endpoint="/transfers/export" fileName="stock-transfer-history.xlsx" />
+        <ExportButton label="Export Transfer History" endpoint="/stock-transfers/export" fileName="stock-transfer-history.xlsx" />
       </div>
 
       <div className="card p-6 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <form onSubmit={handleTransfer} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="label dark:text-gray-300">Consumable</label>
-            <select value={consumableId} onChange={e => setConsumableId(e.target.value)} className="input dark:bg-gray-700 dark:text-white dark:border-gray-500">
-              <option value="">Select consumable...</option>
-              {consumables.map(c => (
-                <option key={c._id} value={c._id}>{c.name}</option>
-              ))}
-            </select>
+            <FieldLabel label="Consumable" tip="Select the item to transfer between facilities. Current stock is shown after selection." required />
+            <SearchableSelect
+              options={consumables.map(c => ({ value: c.id, label: `${c.name} (Stock: ${c.stock ?? 0} ${c.unit || ''})` }))}
+              value={consumableId}
+              onChange={v => setConsumableId(v)}
+              placeholder="Search & select consumable..."
+            />
             {selectedConsumable && (
               <div className="mt-2 p-4 bg-green-600 dark:bg-green-700 border border-green-500 dark:border-green-600 rounded-lg shadow-sm">
                 <p className="text-base text-white font-medium">
@@ -98,38 +100,38 @@ export default function StockTransfer() {
           </div>
           <div className="md:col-span-2 grid grid-cols-3 gap-3">
             <div>
-              <label className="label dark:text-gray-300">Transferred By</label>
+              <FieldLabel label="Transferred By" tip="Staff member responsible for initiating and overseeing the transfer." />
               <input className="input" value={transferBy} onChange={e => setTransferBy(e.target.value)} placeholder="Name" />
             </div>
             <div>
-              <label className="label dark:text-gray-300">Received By</label>
+              <FieldLabel label="Received By" tip="Staff member at the destination who confirms receipt of the transferred stock." />
               <input className="input" value={receivedBy} onChange={e => setReceivedBy(e.target.value)} placeholder="Name" />
             </div>
             <div>
-              <label className="label dark:text-gray-300">Approved By</label>
+              <FieldLabel label="Approved By" tip="The person who authorised the transfer before it was processed." />
               <input className="input" value={approvedBy} onChange={e => setApprovedBy(e.target.value)} placeholder="Name" />
             </div>
           </div>
           <div>
-            <label className="label dark:text-gray-300">From Facility</label>
+            <FieldLabel label="From Facility" tip="The source facility or warehouse where stock is being moved from." required />
             <select value={fromFacility} onChange={e => setFromFacility(e.target.value)} className="input dark:bg-gray-700 dark:text-white dark:border-gray-500">
               <option value="">Select source...</option>
               {facilities.map(f => (
-                <option key={f._id} value={f._id}>{f.name}</option>
+                <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="label dark:text-gray-300">To Facility</label>
+            <FieldLabel label="To Facility" tip="The destination facility that will receive the transferred stock." required />
             <select value={toFacility} onChange={e => setToFacility(e.target.value)} className="input dark:bg-gray-700 dark:text-white dark:border-gray-500">
               <option value="">Select destination...</option>
               {facilities.map(f => (
-                <option key={f._id} value={f._id}>{f.name}</option>
+                <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="label dark:text-gray-300">Quantity</label>
+            <FieldLabel label="Quantity" tip="Number of units to transfer. Must be a positive number and cannot exceed available stock." required />
             <input type="number" min="1" value={quantity} onChange={e => setQuantity(e.target.value)} className="input dark:bg-gray-700 dark:text-white dark:border-gray-500" placeholder="Enter quantity" />
             {selectedConsumable && (
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
